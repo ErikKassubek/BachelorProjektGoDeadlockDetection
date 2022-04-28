@@ -1,4 +1,4 @@
-# Bachelor Projekt: Deadlock Detection in Go
+# Bachelor Projekt: Dynamic Deadlock Detection in Go
 ## Personen
 - Erik Kassubek, Albert-Ludwigs-Universität Freiburg
 - Betreuung: 
