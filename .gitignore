@@ -11,3 +11,5 @@
 *.log
 *.out
 *.xml
+*.nlo
+*.gz
