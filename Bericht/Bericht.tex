@@ -1,6 +1,6 @@
-\documentclass[11pt,a4paper]{scrbook} % artikeltyp, legt vorhandene Ebenen (chapter, section etc.)
+\documentclass[11pt,a4paper]{scrreport}
 
-\input{files/packages.tex}
+\input{files/header.tex}
 
 % \rhead{}
 % \chead{}
@@ -11,6 +11,16 @@
 
 \begin{document}
 \input{files/titlepage.tex}
+\input{files/abstract.tex}
+\tableofcontents
+\input{files/chapter/01_Introduction.tex}
+\newpage
+\input{files/chapter/02_Theory.tex}
+\newpage
+\input{files/chapter/03_Review.tex}
+\newpage
+\input{files/chapter/04_Implementation.tex}
+\newpage
 
-
+\printbibliography
 \end{document}

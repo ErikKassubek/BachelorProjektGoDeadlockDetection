@@ -1,0 +1,47 @@
+\chapter{Theoretischer Hintergrund}
+
+\section{Deadlocks}
+
+Ein Deadlock ist ein Zustand in einem nebenläufigen Programm, indem alle laufenden Tread zyklisch auf die Freigabe von Ressourcen warten, die von einem anderen Tread belegt sind.\\
+Im großen und ganzen lassen sich Deadlocks in zwei Gruppen einteilen: Ressourcen-Deadlocks und Kommunikations-Deadlocks \cite{zhou}.
+Im folgenden sollen jedoch nur durch Locks erzeugte Ressourcen-Deadlocks betrachtet werden.\\
+Locks gehören zu den am weitesten verbreiteten Mechanismen um sicher zu stellen, dass sich in einem nebenläufigen Programm immer nur ein Thread in einem kritischen Bereich aufhalten kann \cite*{zhou}, bzw.
+dass immer nur maximal ein Tread gleichzeitig auf eine gemeinsame Resource, wie 
+z.B. eine Variable zugreifen kann. Möchte ein Thread $T_1$ nun in einen Bereich eintreten, der durch ein Lock, welches bereits von einem anderen Thread $T_0$ beansprucht wird, geschützt ist, muss es so lange vor dem Lock warten, bis dieses von $T_0$ wieder frei gegeben wird.\\
+Ein Deadlock kann nun entstehen, wenn all Treads vor einem solchen Lock warten müssen, wobei die Locks immer von einem anderen Tread gehalten werden. Im folgende bezeichnet $acq_i(l)$, dass das Lock $l$ von Prozess $T_i$ beansprucht und $rel_i(l)$, dass $l$ von $T_i$ wieder freigegeben wird. Man betrachte nun das folgende Beispiel \cite{sulzmann} mit den Treads $T_1$ und $T_2$:
+\begin{table}[H]
+    \centering
+    \begin{tabular}{ccc}
+       & $T_1$        & $T_2$          \\
+    1. & $acq_{1}(y)$ &                \\
+    2. & $acq_{1}(x)$ &                \\
+    3. & $rel_{1}(x)$ &                \\
+    4. & $rel_{1}(y)$ &                \\
+    5. &              & $acq_{2}(x)$ \\
+    6. &              & $acq_{2}(y)$ \\
+    7. &              & $rel_{2}(y)$ \\
+    8. &              & $rel_{2}(x)$
+    \end{tabular}
+\end{table}
+Da $T_1$ und $T_2$ gleichzeitig ablaufen ist folgender Ablauf möglich:
+\begin{table}[H]
+    \centering
+    \begin{tabular}{ccc}
+       & $T_1$          & $T_2$          \\
+    1. & $acq_{1}(y)$ &                \\
+    5. &                & $acq_{2}(x)$ \\
+    2. & $B-acq_{1}(x)$ &                \\
+    6. &                & $B-acq_{2}(y)$
+    \end{tabular}
+\end{table}
+Dabei impliziert $B-acq_i(l)$, dass $acq_{i}(l)$ nicht ausgeführt werden konnte, bzw. dass der Thread $T_i$ vor dem Lock halten muss, da das Lock bereits von einem anderen Tread beansprucht wird. In diesem Beispiel wartet nun $T_1$ darauf, dass das Lock $x$ geöffnet wird und $T_2$ wartet darauf, dass Lock $y$ geöffnet wird. Da nun aller Thread warten müssen, bis ein Lock freigegeben wird, allerdings keiner der Threads weiter laufen kann um ein Lock zu öffnen, kommt es zum Stillstand. Dieser Zustand wird als Deadlock bezeichnet.
+\section{Deadlocks-Detection}
+Deadlocks in Programmen sind Fehler, die oft den vollständige Abbruch eines Programmes zu Folge haben, wenn keine zusätzliche Routine zur Auflösung von Deadlocks implementiert ist. Aus diesem Grund möchte man bereits bei der Implementierung eines Programmes verhindern, dass ein solcher Deadlock auftreten kann. Unglücklicherweise kann es ohne zusätzliche Hilfsmittel schwierig sein, einen solchen Deadlock zu erkennen, da das Auftreten eines Deadlock von dem genauen Ablauf der verschiedenen Threads abhängt.\\ Um dennoch Deadlocks detektieren zu können, können Lock-Graphen oder Lock-Bäume verwendet werden.
+\subsection*{Lock-Graphen}
+Ein Lock-Graph ist ein gerichteter Graph $G = (L, E)$, Dabei ist $L$ die Menge aller Locks $E \subseteq L \times L$ ist definiert als $(l_1, l_2) \in E$ genau dann wenn es einen Tread $T$ gibt, welcher $acq(l_2)$ ausgeführt, während er bereits das Lock $l_1$ hält \cite{bensalem}. Mathematisch ausgedrückt gilt also 
+\begin{align*}
+    (l_1, l_2) \in E \Leftrightarrow \exists t_1, t_3 \not\exists t_2\ ((t_1 < t_2 < t_3) \land aqr(l_1)[t_1] \land rel(l_1)[t_2] \land  aqr(l_2)[t_3])
+\end{align*}
+wobei $aqr(l_1)[t_i]$ bedeutet, dass $aqr(l_1)$ zum Zeitpunkt $t_i$ ausgeführt wird und equivalent für $rel(l_1)[t_i]$.\\
+Ein Deadlock kann nun auftreten wenn es innerhalb dieses Graphen einen Kreis gibt. Um zu verhindern, dass ein false positive dadurch ausgelöst wird, dass alle Kanten in einem solchen Kreis aus dem selben Thread kommen (wodurch kein Deadlock entstehen kann), können die Kanten noch zusätzlich mit einem Label versehen werden, welche den Thread identifiziert, durch welchen die Kante in den Graphen eingefügt wurde. Bei dem Testen nach Zyklen muss nun beachtet werden, dass nicht alle Kanten in dem Kreis das selbe Label haben \cite{bensalem}. 
+
