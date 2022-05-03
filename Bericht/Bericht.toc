@@ -1,7 +1,0 @@
-\babel@toc {ngerman}{}\relax 
-\contentsline {chapter}{\numberline {1}Theoretischer Hintergrund}{4}{chapter.1}%
-\contentsline {section}{\numberline {1.1}Deadlocks}{4}{section.1.1}%
-\contentsline {section}{\numberline {1.2}Deadlocks-Detection}{5}{section.1.2}%
-\contentsline {chapter}{\numberline {2}Review bestehender Tools}{6}{chapter.2}%
-\contentsline {chapter}{\numberline {3}Implementierung eines Deadlock-Detectors}{7}{chapter.3}%
-\providecommand \tocbasic@end@toc@file {}\tocbasic@end@toc@file 
