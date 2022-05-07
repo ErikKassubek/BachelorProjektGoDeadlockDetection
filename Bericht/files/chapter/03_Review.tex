@@ -1,1 +1,39 @@
 \chapter{Review bestehender Tools}
+Im folgenden soll eine Software zur Erkennung von Deadlocks analysiert werden.
+Dazu wird die Software ''sasha-s/go-deadlock'' \cite{sasha-s}, veröffentlicht 
+auf Github, betrachtet.\\
+Dieses verwendet Drop-In Replacements für die, in go standardmäßig 
+implementierten, sync.Mutex Locks. Diese führen sowohl das eigentliche 
+Locking aus und können, beim Durchlaufen des Programms Situationen erkennen, 
+die zu einem Deadlock führen können. Dabei werden sowohl ein allgemeines Lock 
+als auch Readers–writer-locks implementiert. Dies wirkt sich allerdings nur auf
+die Anwendung des eigentlichen Lockings aus, nicht aber auf die Detection von 
+Deadlocks. Aus diesem Grund wird hierauf im folgenden nicht weiter eingegangen, 
+und die Methoden für die Detection von Deadlocks bezieht sich sowohl auf die
+allgemeinen als auch die Readers–writer Locks.\\
+Für die Erkennung werden drei verschiedene Methoden angewendet, die im folgenden
+betrachtet werden sollen.
+\section{Rekursives Locking}
+Unter rekursiven Locking versteht man, dass ein Lock von dem selben Thread 
+mehrfach geschlossen wird, ohne zwischen diesen Schließungen wieder geöffnet zu
+werden. Ein Beispiel dazu ist das folgende Programm:
+\begin{table}[H]
+    \centering
+    \begin{tabular}{ll}
+       & $T_1$          \\
+    1. & $acq_{T_1}(x)$ \\
+    2. & $acq_{T_1}(x)$ \\
+    3. & $rel_{T_1}(x)$
+    \end{tabular}
+\end{table}
+$T_1$ beansprucht das Lock $x$ in Zeile $1$ für sich. In Zeile 2 versucht der 
+gleiche Thread erneut das Lock $x$ zu beanspruchen. Da dieses aber schon in 
+Zeile 1 beansprucht wurde, muss das Programm vor Zeile 2 warten, bis $x$ wieder 
+freigegeben wird. Da dadurch aber die Freigabe in Zeile 3 niemals erreicht werden
+kann wartet das Programm für immer, befindet sich also in einem Deadlock.
+
+
+
+\section{Inkonsistentes Locking}
+
+\section{Timeout}
