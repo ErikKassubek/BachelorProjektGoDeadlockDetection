@@ -1,6 +1,6 @@
 \chapter{Review bestehender Tools}
 Im folgenden soll eine Software zur Erkennung von Deadlocks analysiert werden.
-Dazu wird die Software ''sasha-s/go-deadlock'' \cite{sasha-s}, veröffentlicht 
+Dazu wird die Software ``sasha-s/go-deadlock`` \cite{sasha-s}, veröffentlicht 
 auf Github, betrachtet.\\
 Dieses verwendet Drop-In Replacements für die, in go standardmäßig 
 implementierten, sync.Mutex Locks. Diese führen sowohl das eigentliche 
@@ -17,23 +17,54 @@ betrachtet werden sollen.
 Unter rekursiven Locking versteht man, dass ein Lock von dem selben Thread 
 mehrfach geschlossen wird, ohne zwischen diesen Schließungen wieder geöffnet zu
 werden. Ein Beispiel dazu ist das folgende Programm:
-\begin{table}[H]
-    \centering
-    \begin{tabular}{ll}
-       & $T_1$          \\
-    1. & $acq_{T_1}(x)$ \\
-    2. & $acq_{T_1}(x)$ \\
-    3. & $rel_{T_1}(x)$
-    \end{tabular}
-\end{table}
-$T_1$ beansprucht das Lock $x$ in Zeile $1$ für sich. In Zeile 2 versucht der 
-gleiche Thread erneut das Lock $x$ zu beanspruchen. Da dieses aber schon in 
-Zeile 1 beansprucht wurde, muss das Programm vor Zeile 2 warten, bis $x$ wieder 
-freigegeben wird. Da dadurch aber die Freigabe in Zeile 3 niemals erreicht werden
-kann wartet das Programm für immer, befindet sich also in einem Deadlock.
-
-
+\begin{figure}[H]
+    \lstinputlisting{code/review_rekursive_1.go}
+\end{figure}
+Hierbei kann es schon, wie in dem Beispielcode gezeigt, bei nur einem Thread
+zu einem Deadlock kommen. Die Funktion beansprucht das Lock $mu$ in Zeile $3$ 
+für sich. In Zeile 4 versucht sie erneut das Lock $x$ zu beanspruchen. Da dieses
+aber schon in Zeile 3 beansprucht wurde, muss das Programm vor Zeile 4 warten, 
+bis $mu$ wieder freigegeben wird. Da dadurch aber die Freigabe in Zeile 3 
+niemals erreicht werden kann wartet das Programm für immer, befindet sich also 
+in einem Deadlock.\\
+Um solche Situation zu erkennen speichert das Programm eine Liste $l.cur$ mit 
+allen momentan gehaltenen 
+Locks. Dabei wird neben der Information, welches Lock gehalten wird auch 
+gespeichert, von welchem Thread das Lock gehalten wird. Wird nun ein Lock neu 
+beansprucht, überprüft 
+das Programm, ob dieses Lock mit dem Thread, der das Lock beanspruchen möchte 
+bereits in der Liste gehalten Locks auftaucht. Ist dies der Fall, dann nimmt das
+Programm an, dass es sich hierbei um ein mögliches Deadlock handelt und führt 
+entsprechende Schritte aus, um den Nutzer zu warnen. Wird ein Lock wieder frei
+gegeben, wird der entsprechende Eintrag aus $l.loc$ entfernt.
 
 \section{Inkonsistentes Locking}
 
 \section{Timeout}
+Neben diesen beiden Methoden, die vorausschauend nach möglichen Deadlocks 
+Ausschau halten, versucht das Programm auch mit Timeouts um zu überprüfen ob 
+sich das Programm bereits in einem Deadlock befindet. Möchte ein Thread ein 
+Deadlock beanspruchen wird vorher eine go routine mit einem Counter gestartet.
+Sollte die Inanspruchnahme des Locks innerhalb der vorgegebenen Zeit 
+(default: 30s) gelingen, wird die go routine beendet. Sollte es nicht gelingen,
+nimmt das Programm nach der festgelegten Zeit an, dass es zu einem Deadlock 
+gekommen ist und gibt eine entsprechende Nachricht aus. Diese Methode kann
+durchaus nützlich sein, um über Deadlocks informiert zu werden. Allerdings führt
+sie sehr leicht zu false-positives, wenn die Abarbeitung anderer Routinen und 
+damit die Freigabe des Locks länger Dauer, als die festgelegte Timeout Zeit.
+Im folgenden Beispiel wird dies deutlich:
+\begin{figure}[H]
+    \lstinputlisting{code/review_timeout_falsePositive.go}
+\end{figure}
+Der Chanel finished wird lediglich verwendet um zu verhindern, dass das Programm 
+beendet wird, bevor die gol Routinen durchlaufen wurden. Er ist für die Deadlock
+Analyse also irrelevant. Das Programm startet zwei go-Routinen, die beide das 
+selbe Lock $x$ verwenden. Durch den time.Sleep(2 * time.Second) command wird 
+sichergestellt, dass die erste go Routine zuerst auf das Lock zugreift. 
+Dass Lock in Routine 2 muss also warten, bis es in Routine 1 wieder freigegeben
+wird. Dies geschieht in etwa $38 s$ nachdem die zweite Routine mit dem warten 
+auf die Freigabe von $x$ beginnt. Da dies länger ist als die standardmäßig
+festgelegte maximale Wartezeit von $30 s$ nimmt das Programm an, es sei in einen 
+Deadlock gekommen, obwohl kein Solcher vorliegt, und auch kein Deadlock möglich 
+ist.
+
