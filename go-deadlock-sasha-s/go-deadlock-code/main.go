@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
-	"sync"
 	"time"
+
+	"github.com/sasha-s/go-deadlock"
 )
 
 func test_1() {
@@ -46,38 +46,34 @@ func test_2() {
 
 // no possible deadlock but still error message
 func test_3() {
-	Opts.DeadlockTimeout = 10 * time.Second
-	Opts.OnPotentialDeadlock = func() {
-		fmt.Println("func")
-	}
-
-	var x Mutex
+	var x deadlock.Mutex
 	finished := make(chan bool)
 
 	go func() {
+		// first go routine
 		x.Lock()
-		time.Sleep(20 * time.Second)
+		time.Sleep(40 * time.Second)
 		x.Unlock()
-		finished <- true
 	}()
 
 	go func() {
-		time.Sleep(1 * time.Second)
+		// second go routine
+		time.Sleep(2 * time.Second)
 		x.Lock()
 		x.Unlock()
+		finished <- true
 	}()
 
 	<-finished
 }
 
 func test_4() {
-	Opts.DeadlockTimeout = 10 * time.Second
 	var x Mutex
 	finished := make(chan bool)
 
 	go func() {
 		x.Lock()
-		time.Sleep(4 * time.Second)
+		time.Sleep(40 * time.Second)
 		x.Unlock()
 		finished <- true
 	}()
@@ -97,12 +93,21 @@ func test_4() {
 }
 
 func test_5() {
-	var mu sync.Mutex
-	mu.Lock()
-	mu.Lock()
-	mu.Unlock()
+	var x deadlock.Mutex
+	x.Lock()
+	x.Lock()
+	x.Unlock()
+}
+func test_6() {
+	var x deadlock.Mutex
+	var y deadlock.Mutex
+
+	x.Lock()
+	y.Lock()
+	x.Lock()
+	x.Unlock()
 }
 
 func main() {
-	test_5()
+	test_3()
 }
