@@ -13,6 +13,7 @@ und die Methoden für die Detection von Deadlocks bezieht sich sowohl auf die
 allgemeinen als auch die Readers–writer Locks.\\
 Für die Erkennung werden drei verschiedene Methoden angewendet, die im folgenden
 betrachtet werden sollen.
+
 \section{Rekursives Locking}
 Unter rekursiven Locking versteht man, dass ein Lock von dem selben Thread 
 mehrfach geschlossen wird, ohne zwischen diesen Schließungen wieder geöffnet zu
@@ -48,7 +49,8 @@ Deadlock beanspruchen wird vorher eine go routine mit einem Counter gestartet.
 Sollte die Inanspruchnahme des Locks innerhalb der vorgegebenen Zeit 
 (default: 30s) gelingen, wird die go routine beendet. Sollte es nicht gelingen,
 nimmt das Programm nach der festgelegten Zeit an, dass es zu einem Deadlock 
-gekommen ist und gibt eine entsprechende Nachricht aus. Diese Methode kann
+gekommen ist und gibt eine entsprechende Nachricht aus.\\
+Diese Methode kann
 durchaus nützlich sein, um über Deadlocks informiert zu werden. Allerdings führt
 sie sehr leicht zu false-positives, wenn die Abarbeitung anderer Routinen und 
 damit die Freigabe des Locks länger Dauer, als die festgelegte Timeout Zeit.
