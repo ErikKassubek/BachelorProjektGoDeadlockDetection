@@ -1,4 +1,5 @@
 \chapter{Review bestehender Tools}
+\section{go-deadlock}\label{Chap::Review:go-deadlock}
 Im folgenden soll eine Software zur Erkennung von Deadlocks analysiert werden.
 Dazu wird die Software ``sasha-s/go-deadlock`` \cite{sasha-s}, veröffentlicht 
 auf Github, betrachtet.\\
@@ -14,7 +15,7 @@ allgemeinen als auch die Readers–writer Locks.\\
 Für die Erkennung werden drei verschiedene Methoden angewendet, die im folgenden
 betrachtet werden sollen.
 
-\section{Rekursives Locking}
+\subsection{Rekursives Locking}
 Unter rekursiven Locking versteht man, dass ein Lock von dem selben Thread 
 mehrfach geschlossen wird, ohne zwischen diesen Schließungen wieder geöffnet zu
 werden. Ein Beispiel dazu ist das folgende Programm:
@@ -39,19 +40,19 @@ Programm an, dass es sich hierbei um ein mögliches Deadlock handelt und führt
 entsprechende Schritte aus, um den Nutzer zu warnen. Wird ein Lock wieder frei
 gegeben, wird der entsprechende Eintrag aus $l.loc$ entfernt.
 
-\section{Inkonsistentes Locking} \label{Kap::Rev:Inconsistent}
+\subsection{Inkonsistentes Locking}\label{Kap::Rev:Inconsistent}
 Mit dieser Methode werden möchte Deadlocks gefunden, die dadurch entstehen,
 dass alle Threads zyklisch auf die Freigabe eines Locks warten, welches von 
-einem anderen Thread gehalten wird. ein Beispiel dafür kann in folgender Funktion
+einem anderen Thread gehalten wird. Ein Beispiel dafür kann in folgender Funktion
 gesehen werden:
 \begin{figure}[H]
     \lstinputlisting{code/review_working_1.go}
 \end{figure}
-Dieses Beispiel entspricht dem in Kap. \ref*{Kap::Theo:Deadlocks} beschreiben 
+Dieses Beispiel entspricht dem in Kap.~\ref*{Kap::Theo:Deadlocks} beschreiben 
 Beispiel.\\
 Die Detection funktioniert über einen Lockgraphen. Dieser wird über ein 
 Dictionary gehandhabt. Wird ein neuer neues Lock $p$ beanspruchen, so wird für 
-jedes Lock $b$ , welches bereits gehalten wird ein  
+jedes Lock $b$, welches bereits gehalten wird ein  
 neuer Eintrag $beforeAfter\{b, p\}$ in das Dictionary $l.order$ hinzugefügt. 
 Der Key gibt somit die beiden Locks an und speichert auch, welches der Beiden Locks
 zuerst beansprucht wurde. Die Werte, die dem Key zugeordnet sind, beinhalten 
@@ -86,7 +87,7 @@ werden, bevor Zeile $10$ erreicht wird.
 
 
 
-\section{Timeout}
+\subsection{Timeout}
 Neben diesen beiden Methoden, die vorausschauend nach möglichen Deadlocks 
 Ausschau halten, versucht das Programm auch mit Timeouts um zu überprüfen ob 
 sich das Programm bereits in einem Deadlock befindet. Möchte ein Thread ein 
@@ -115,7 +116,7 @@ festgelegte maximale Wartezeit von $30 s$ nimmt das Programm an, es sei in einen
 Deadlock gekommen, obwohl kein Solcher vorliegt, und auch kein Deadlock möglich 
 ist.
 
-\section{False Negatives}
+\subsection{False Negatives}
 Neben den bereits in den vorherigen Abschnitten betrachteten Fällen, bei denen 
 ein möglicher Deadlock nicht erkannt wurde, gibt es noch andere Fälle, bei denen
 dies der Fall ist. Ein Fall,
@@ -126,6 +127,15 @@ weitere.
     \lstinputlisting{code/review_nested.go}
 \end{figure}
 Diese Funktion ist bezüglich ihres Ablaufs identisch zu der Funktion 
-circularLocking in Kapitel \ref*{Kap::Rev:Inconsistent}. Dennoch ist es dem 
+circularLocking in Kapitel~\ref*{Kap::Rev:Inconsistent}. Dennoch ist es dem 
 Programm aufgrund der Verschachtelten go-Routine nicht möglich, den möglichen 
 Deadlock zu erkennen. 
+
+\section{Go Runtime Deadlock Detection}
+Go besitzt einen eigenen Detektor zur Erkennung von Deadlocks. Allerdings kann 
+dieser, im Unterschied zu dem in~\ref{Chap::Review:go-deadlock} betrachteten 
+Detector nur tatsächlich auftretende Deadlocks erkennen. Eine Erkennung ob 
+in dem Code ein Deadlock möglich ist findet hierbei nicht statt. Um zu erkennen,
+ob ein Deadlock vorliegt zählt go die nicht blockierten Go-Routinen.
+Fällt dieser Wert auf $0$, nimmt Go an, dass es zu einem Deadlock gekommen 
+ist und bricht das Programm mit einer Fehlermeldung ab~\cite{grdd_code}.

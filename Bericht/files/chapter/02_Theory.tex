@@ -37,11 +37,15 @@ Da $T_1$ und $T_2$ gleichzeitig ablaufen ist folgender Ablauf möglich:
 Dabei impliziert $B-acq_i(l)$, dass $acq_{i}(l)$ nicht ausgeführt werden konnte, bzw. dass der Thread $T_i$ vor dem Lock halten muss, da das Lock bereits von einem anderen Tread beansprucht wird. In diesem Beispiel wartet nun $T_1$ darauf, dass das Lock $x$ geöffnet wird und $T_2$ wartet darauf, dass Lock $y$ geöffnet wird. Da nun aller Thread warten müssen, bis ein Lock freigegeben wird, allerdings keiner der Threads weiter laufen kann um ein Lock zu öffnen, kommt es zum Stillstand. Dieser Zustand wird als Deadlock bezeichnet.
 \section{Deadlocks-Detection}
 Deadlocks in Programmen sind Fehler, die oft den vollständige Abbruch eines Programmes zu Folge haben, wenn keine zusätzliche Routine zur Auflösung von Deadlocks implementiert ist. Aus diesem Grund möchte man bereits bei der Implementierung eines Programmes verhindern, dass ein solcher Deadlock auftreten kann. Unglücklicherweise kann es ohne zusätzliche Hilfsmittel schwierig sein, einen solchen Deadlock zu erkennen, da das Auftreten eines Deadlock von dem genauen Ablauf der verschiedenen Threads abhängt.\\ Um dennoch Deadlocks detektieren zu können, können Lock-Graphen oder Lock-Bäume verwendet werden.
-\subsection*{Lock-Graphen}
+\subsection{Lock-Graphen}
 Ein Lock-Graph ist ein gerichteter Graph $G = (L, E)$, Dabei ist $L$ die Menge aller Locks $E \subseteq L \times L$ ist definiert als $(l_1, l_2) \in E$ genau dann wenn es einen Tread $T$ gibt, welcher $acq(l_2)$ ausgeführt, während er bereits das Lock $l_1$ hält \cite{bensalem}. Mathematisch ausgedrückt gilt also 
 \begin{align*}
     (l_1, l_2) \in E \Leftrightarrow \exists t_1, t_3 \not\exists t_2\ ((t_1 < t_2 < t_3) \land aqr(l_1)[t_1] \land rel(l_1)[t_2] \land  aqr(l_2)[t_3])
 \end{align*}
 wobei $aqr(l_1)[t_i]$ bedeutet, dass $aqr(l_1)$ zum Zeitpunkt $t_i$ ausgeführt wird und equivalent für $rel(l_1)[t_i]$.\\
 Ein Deadlock kann nun auftreten wenn es innerhalb dieses Graphen einen Kreis gibt. Um zu verhindern, dass ein false positive dadurch ausgelöst wird, dass alle Kanten in einem solchen Kreis aus dem selben Thread kommen (wodurch kein Deadlock entstehen kann), können die Kanten noch zusätzlich mit einem Label versehen werden, welche den Thread identifiziert, durch welchen die Kante in den Graphen eingefügt wurde. Bei dem Testen nach Zyklen muss nun beachtet werden, dass nicht alle Kanten in dem Kreis das selbe Label haben \cite{bensalem}. 
+\subsection{Lock-Bäume}
+\textcolor{red}{Funktionsweis von Lock-Bäumen}
 
+\subsection{UNDEAD}
+\textcolor{red}{Funktionsweise UNDEAD}
