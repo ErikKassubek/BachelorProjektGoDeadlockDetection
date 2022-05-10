@@ -39,7 +39,52 @@ Programm an, dass es sich hierbei um ein mögliches Deadlock handelt und führt
 entsprechende Schritte aus, um den Nutzer zu warnen. Wird ein Lock wieder frei
 gegeben, wird der entsprechende Eintrag aus $l.loc$ entfernt.
 
-\section{Inkonsistentes Locking}
+\section{Inkonsistentes Locking} \label{Kap::Rev:Inconsistent}
+Mit dieser Methode werden möchte Deadlocks gefunden, die dadurch entstehen,
+dass alle Threads zyklisch auf die Freigabe eines Locks warten, welches von 
+einem anderen Thread gehalten wird. ein Beispiel dafür kann in folgender Funktion
+gesehen werden:
+\begin{figure}[H]
+    \lstinputlisting{code/review_working_1.go}
+\end{figure}
+Dieses Beispiel entspricht dem in Kap. \ref*{Kap::Theo:Deadlocks} beschreiben 
+Beispiel.\\
+Die Detection funktioniert über einen Lockgraphen. Dieser wird über ein 
+Dictionary gehandhabt. Wird ein neuer neues Lock $p$ beanspruchen, so wird für 
+jedes Lock $b$ , welches bereits gehalten wird ein  
+neuer Eintrag $beforeAfter\{b, p\}$ in das Dictionary $l.order$ hinzugefügt. 
+Der Key gibt somit die beiden Locks an und speichert auch, welches der Beiden Locks
+zuerst beansprucht wurde. Die Werte, die dem Key zugeordnet sind, beinhalten 
+Information darüber, über welche Funktion, bzw. Routine das Lock beansprucht wurde.
+Um zu überprüfen ob ein neues Lock zu einem Deadlock führen kann, wird überprüft,
+ob $l.order$ einen Key $beforeAfter\{p, b\}$ besitzt, der die beiden Locks somit in 
+umgekehrter Reihenfolge enthält. Existiert solch ein Key, bedeutet dies einen 
+Loop aus zwei Kanten im Lockgraphen und somit einen möglichen Deadlock. 
+Dies bedeutet aber auch, dass das Programm nicht in der Lage ist, ein Kreis 
+in einem Lock-Graphen zu finden, wenn dieser aus drei oder mehr Kanten besteht.
+Soche Situationen können aber dennoch zu Deadlocks führen. Ein Beispiel dafür 
+ist die folgende Funktion:
+\begin{figure}[H]
+    \lstinputlisting{code/review_3_edge_loop.go}
+\end{figure}
+Führen die drei Routinen jeweils ihre erste Zeile gleichzeitig aus, muss jede 
+Routine vor ihrer zweiten Zeile warten und es kommt zu einem Deadlock. Da diese
+Konstellation in einem Lockgraphen aber zu einem Kreis mit einer Länge von drei 
+Kanten führen würde, kann das Programm den möglichen Deadlock nicht erkennen.\\
+Ein weiteres Problem besteht darin, dass das Programm Einträge aus $l.order$ nicht 
+löscht, wenn ein Lock wieder frei gegeben wird. Sie werden nur entfernt, wenn 
+das Dictionary eine bestimmte Größe überschreitet. Dies kann zu false-positives
+führen. Ein Beispiel dazu wäre die folgende Funktion:  
+\begin{figure}[H]
+    \lstinputlisting{code/review_noDeletion.go}
+\end{figure}
+Es ist sehr einfach zu sehen, dass es in dieser Funktion nicht zu einem Deadlock 
+kommen kann. Dennoch zeigt das Programm einen möglichen Deadlock an, da die 
+Information über die Locks $x$ und $y$ aus Zeile $7-8$ in Zeile $10-11$ immer 
+noch vorhanden ist, obwohl die beiden Locks in jedem Fall wieder freigegeben
+werden, bevor Zeile $10$ erreicht wird.
+
+
 
 \section{Timeout}
 Neben diesen beiden Methoden, die vorausschauend nach möglichen Deadlocks 
@@ -70,3 +115,17 @@ festgelegte maximale Wartezeit von $30 s$ nimmt das Programm an, es sei in einen
 Deadlock gekommen, obwohl kein Solcher vorliegt, und auch kein Deadlock möglich 
 ist.
 
+\section{False Negatives}
+Neben den bereits in den vorherigen Abschnitten betrachteten Fällen, bei denen 
+ein möglicher Deadlock nicht erkannt wurde, gibt es noch andere Fälle, bei denen
+dies der Fall ist. Ein Fall,
+bei dem ein Deadlock auftreten könnte, welcher von dem Programm aber nicht erkannt
+wird, entsteht bei verschachtelten Routinen. Dabei erzeugt eine go-Routine eine 
+weitere.
+\begin{figure}[H]
+    \lstinputlisting{code/review_nested.go}
+\end{figure}
+Diese Funktion ist bezüglich ihres Ablaufs identisch zu der Funktion 
+circularLocking in Kapitel \ref*{Kap::Rev:Inconsistent}. Dennoch ist es dem 
+Programm aufgrund der Verschachtelten go-Routine nicht möglich, den möglichen 
+Deadlock zu erkennen. 

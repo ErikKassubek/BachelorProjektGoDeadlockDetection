@@ -1,8 +1,8 @@
 \chapter{Theoretischer Hintergrund}
 
-\section{Deadlocks}
+\section{Deadlocks} \label{Kap::Theo:Deadlocks}
 
-Ein Deadlock ist ein Zustand in einem nebenläufigen Programm, indem alle laufenden Tread zyklisch auf die Freigabe von Ressourcen warten, die von einem anderen Tread belegt sind.\\
+Ein Deadlock ist ein Zustand in einem nebenläufigen Programm, indem alle laufenden Tread zyklisch auf die Freigabe von Ressourcen warten.\\
 Im großen und ganzen lassen sich Deadlocks in zwei Gruppen einteilen: Ressourcen-Deadlocks und Kommunikations-Deadlocks \cite{zhou}.
 Im folgenden sollen jedoch nur durch Locks erzeugte Ressourcen-Deadlocks betrachtet werden.\\
 Locks gehören zu den am weitesten verbreiteten Mechanismen um sicher zu stellen, dass sich in einem nebenläufigen Programm immer nur ein Thread in einem kritischen Bereich aufhalten kann \cite*{zhou}, bzw.

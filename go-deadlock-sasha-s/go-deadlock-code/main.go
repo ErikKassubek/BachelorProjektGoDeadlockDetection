@@ -2,30 +2,30 @@ package main
 
 import (
 	"time"
-
-	"github.com/sasha-s/go-deadlock"
 )
 
 func test_1() {
-
-	Opts.PrintAllCurrentGoroutines = false
 	var x Mutex
 	var y Mutex
+	ch := make(chan bool, 2)
 
 	go func() {
 		y.Lock()
 		x.Lock()
 		x.Unlock()
 		y.Unlock()
+		ch <- true
 	}()
 	go func() {
 		x.Lock()
 		y.Lock()
 		y.Unlock()
 		x.Unlock()
+		ch <- true
 	}()
 
-	time.Sleep(time.Second * 3)
+	<-ch
+	<-ch
 }
 
 func test_2() {
@@ -46,7 +46,7 @@ func test_2() {
 
 // no possible deadlock but still error message
 func test_3() {
-	var x deadlock.Mutex
+	var x Mutex
 	finished := make(chan bool)
 
 	go func() {
@@ -93,14 +93,14 @@ func test_4() {
 }
 
 func test_5() {
-	var x deadlock.Mutex
+	var x Mutex
 	x.Lock()
 	x.Lock()
 	x.Unlock()
 }
 func test_6() {
-	var x deadlock.Mutex
-	var y deadlock.Mutex
+	var x Mutex
+	var y Mutex
 
 	x.Lock()
 	y.Lock()
@@ -108,6 +108,109 @@ func test_6() {
 	x.Unlock()
 }
 
+// does not detect
+func test_7() {
+	var x Mutex
+	var y Mutex
+	ch := make(chan bool)
+
+	go func() {
+		x.Lock()
+		go func() {
+			y.Lock()
+			y.Unlock()
+			ch <- true
+		}()
+		<-ch
+		x.Unlock()
+	}()
+
+	go func() {
+		y.Lock()
+		x.Lock()
+		x.Lock()
+		y.Lock()
+	}()
+}
+
+func test_8() {
+	var x Mutex
+	var y Mutex
+	var z Mutex
+	ch := make(chan bool)
+
+	go func() {
+		time.Sleep(time.Second)
+		x.Lock()
+		y.Lock()
+		z.Lock()
+		z.Unlock()
+		y.Unlock()
+		x.Unlock()
+		ch <- true
+	}()
+
+	z.Lock()
+	y.Lock()
+	x.Lock()
+	x.Unlock()
+	y.Unlock()
+	z.Unlock()
+
+	<-ch
+
+}
+
+func test_9() {
+	var x Mutex
+	var y Mutex
+
+	x.Lock()
+	y.Lock()
+	y.Unlock()
+	x.Unlock()
+
+	y.Lock()
+	x.Lock()
+	x.Unlock()
+	y.Unlock()
+}
+
+func test_10() {
+	var x Mutex
+	var y Mutex
+	var z Mutex
+	ch := make(chan bool, 3)
+
+	go func() {
+		x.Lock()
+		y.Lock()
+		y.Unlock()
+		x.Unlock()
+		ch <- true
+	}()
+
+	go func() {
+		y.Lock()
+		z.Lock()
+		z.Unlock()
+		y.Unlock()
+		ch <- true
+	}()
+
+	go func() {
+		z.Lock()
+		x.Lock()
+		x.Unlock()
+		z.Unlock()
+		ch <- true
+	}()
+
+	<-ch
+	<-ch
+	<-ch
+}
+
 func main() {
-	test_3()
+	test_10()
 }
