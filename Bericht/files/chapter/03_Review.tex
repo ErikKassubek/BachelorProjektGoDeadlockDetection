@@ -12,8 +12,13 @@ die Anwendung des eigentlichen Lockings aus, nicht aber auf die Detection von
 Deadlocks. Aus diesem Grund wird hierauf im folgenden nicht weiter eingegangen, 
 und die Methoden für die Detection von Deadlocks bezieht sich sowohl auf die
 allgemeinen als auch die Readers–writer Locks.\\
-Für die Erkennung werden drei verschiedene Methoden angewendet, die im folgenden
-betrachtet werden sollen.
+Für die Erkennung werden drei verschiedene Fälle betrachtet:
+\begin{itemize}
+    \item Rekursives Locking
+    \item Zyklisches Locking
+    \item Timeout
+\end{itemize}
+Diese sollen im folgenden genauer betrachtet werden.
 
 \subsection{Rekursives Locking}
 Unter rekursiven Locking versteht man, dass ein Lock von dem selben Thread 
@@ -40,7 +45,7 @@ Programm an, dass es sich hierbei um ein mögliches Deadlock handelt und führt
 entsprechende Schritte aus, um den Nutzer zu warnen. Wird ein Lock wieder frei
 gegeben, wird der entsprechende Eintrag aus $l.loc$ entfernt.
 
-\subsection{Inkonsistentes Locking}\label{Kap::Rev:Inconsistent}
+\subsection{Zyklisches Locking}\label{Kap::Rev:Inconsistent}
 Mit dieser Methode werden möchte Deadlocks gefunden, die dadurch entstehen,
 dass alle Threads zyklisch auf die Freigabe eines Locks warten, welches von 
 einem anderen Thread gehalten wird. Ein Beispiel dafür kann in folgender Funktion
@@ -51,7 +56,7 @@ gesehen werden:
 Dieses Beispiel entspricht dem in Kap.~\ref*{Kap::Theo:Deadlocks} beschreiben 
 Beispiel.\\
 Die Detection funktioniert über einen Lockgraphen. Dieser wird über ein 
-Dictionary gehandhabt. Wird ein neuer neues Lock $p$ beanspruchen, so wird für 
+Dictionary implementiert. Wird ein neuer neues Lock $p$ beanspruchen, so wird für 
 jedes Lock $b$, welches bereits gehalten wird ein  
 neuer Eintrag $beforeAfter\{b, p\}$ in das Dictionary $l.order$ hinzugefügt. 
 Der Key gibt somit die beiden Locks an und speichert auch, welches der Beiden Locks
