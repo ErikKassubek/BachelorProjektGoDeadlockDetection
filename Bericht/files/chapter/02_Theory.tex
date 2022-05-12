@@ -65,7 +65,7 @@ in $t_1$ in $t_2$ über $n_2$ ist. Sollte dies der Fall sein, ist dies ein Zeich
 für ein mögliches Deadlock. Um zu verhindern, dass Deadlocks, die durch ein 
 anderes Lock unmöglich gemacht werden fälschlicherweise detektiert werden,
 werden Knoten in $t_2$ markiert, sobald sie betrachtet wurden. Knoten unterhalb
-markierter Knoten werden nicht betrachtet, bis die markierung wieder entfernt wird,
+markierter Knoten werden nicht betrachtet, bis die Markierung wieder entfernt wird,
 nachdem alle entsprechenden Knoten betrachtet wurde~\cite{havelund}.
 Anders als in Lock-Graphen können Bäume nur Deadlocks-Erkennen, die durch das 
 zyklische Warten von zwei Threads entstehen. Sobald drei oder mehr Thread beteiligt
