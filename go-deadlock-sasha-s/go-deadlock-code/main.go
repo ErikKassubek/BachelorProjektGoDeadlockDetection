@@ -3,214 +3,217 @@ package main
 import (
 	"fmt"
 	"sync"
+	"time"
+
+	"github.com/sasha-s/go-deadlock"
 )
 
-// func test_1() {
-// 	var x Mutex
-// 	var y Mutex
-// 	ch := make(chan bool, 2)
+func test_1() {
+	var x deadlock.Mutex
+	var y deadlock.Mutex
+	ch := make(chan bool, 2)
 
-// 	go func() {
-// 		y.Lock()
-// 		x.Lock()
-// 		x.Unlock()
-// 		y.Unlock()
-// 		ch <- true
-// 	}()
-// 	go func() {
-// 		x.Lock()
-// 		y.Lock()
-// 		y.Unlock()
-// 		x.Unlock()
-// 		ch <- true
-// 	}()
+	go func() {
+		y.Lock()
+		x.Lock()
+		x.Unlock()
+		y.Unlock()
+		ch <- true
+	}()
+	go func() {
+		x.Lock()
+		y.Lock()
+		y.Unlock()
+		x.Unlock()
+		ch <- true
+	}()
 
-// 	<-ch
-// 	<-ch
-// }
+	<-ch
+	<-ch
+}
 
-// func test_2() {
-// 	var x Mutex
-// 	var y Mutex
+func test_2() {
+	var x deadlock.Mutex
+	var y deadlock.Mutex
 
-// 	go func() {
-// 		y.Lock()
-// 		x.Lock()
-// 		x.Unlock()
-// 		y.Unlock()
-// 		x.Lock()
-// 		y.Lock()
-// 		y.Unlock()
-// 		y.Unlock()
-// 	}()
-// }
+	go func() {
+		y.Lock()
+		x.Lock()
+		x.Unlock()
+		y.Unlock()
+		x.Lock()
+		y.Lock()
+		y.Unlock()
+		y.Unlock()
+	}()
+}
 
-// // no possible deadlock but still error message
-// func test_3() {
-// 	var x Mutex
-// 	finished := make(chan bool)
+// no possible deadlock but still error message
+func test_3() {
+	var x deadlock.Mutex
+	finished := make(chan bool)
 
-// 	go func() {
-// 		// first go routine
-// 		x.Lock()
-// 		time.Sleep(40 * time.Second)
-// 		x.Unlock()
-// 	}()
+	go func() {
+		// first go routine
+		x.Lock()
+		time.Sleep(40 * time.Second)
+		x.Unlock()
+	}()
 
-// 	go func() {
-// 		// second go routine
-// 		time.Sleep(2 * time.Second)
-// 		x.Lock()
-// 		x.Unlock()
-// 		finished <- true
-// 	}()
+	go func() {
+		// second go routine
+		time.Sleep(2 * time.Second)
+		x.Lock()
+		x.Unlock()
+		finished <- true
+	}()
 
-// 	<-finished
-// }
+	<-finished
+}
 
-// func test_4() {
-// 	var x Mutex
-// 	finished := make(chan bool)
+func test_4() {
+	var x deadlock.Mutex
+	finished := make(chan bool)
 
-// 	go func() {
-// 		x.Lock()
-// 		time.Sleep(40 * time.Second)
-// 		x.Unlock()
-// 		finished <- true
-// 	}()
+	go func() {
+		x.Lock()
+		time.Sleep(40 * time.Second)
+		x.Unlock()
+		finished <- true
+	}()
 
-// 	go func() {
-// 		time.Sleep(1 * time.Second)
-// 		x.Lock()
-// 		x.Unlock()
-// 	}()
+	go func() {
+		time.Sleep(1 * time.Second)
+		x.Lock()
+		x.Unlock()
+	}()
 
-// 	time.Sleep(7 * time.Second)
-// 	x.Lock()
-// 	time.Sleep(10 * time.Second)
-// 	x.Unlock()
+	time.Sleep(7 * time.Second)
+	x.Lock()
+	time.Sleep(10 * time.Second)
+	x.Unlock()
 
-// 	<-finished
-// }
+	<-finished
+}
 
-// func test_5() {
-// 	var x Mutex
-// 	x.Lock()
-// 	x.Lock()
-// 	x.Unlock()
-// }
-// func test_6() {
-// 	var x Mutex
-// 	var y Mutex
+func test_5() {
+	var x deadlock.Mutex
+	x.Lock()
+	x.Lock()
+	x.Unlock()
+}
+func test_6() {
+	var x deadlock.Mutex
+	var y deadlock.Mutex
 
-// 	x.Lock()
-// 	y.Lock()
-// 	x.Lock()
-// 	x.Unlock()
-// }
+	x.Lock()
+	y.Lock()
+	x.Lock()
+	x.Unlock()
+}
 
-// // does not detect
-// func test_7() {
-// 	var x Mutex
-// 	var y Mutex
-// 	ch := make(chan bool)
+// does not detect
+func test_7() {
+	var x deadlock.Mutex
+	var y deadlock.Mutex
+	ch := make(chan bool)
 
-// 	go func() {
-// 		x.Lock()
-// 		go func() {
-// 			y.Lock()
-// 			y.Unlock()
-// 			ch <- true
-// 		}()
-// 		<-ch
-// 		x.Unlock()
-// 	}()
+	go func() {
+		x.Lock()
+		go func() {
+			y.Lock()
+			y.Unlock()
+			ch <- true
+		}()
+		<-ch
+		x.Unlock()
+	}()
 
-// 	go func() {
-// 		y.Lock()
-// 		x.Lock()
-// 		x.Lock()
-// 		y.Lock()
-// 	}()
-// }
+	go func() {
+		y.Lock()
+		x.Lock()
+		x.Lock()
+		y.Lock()
+	}()
+}
 
-// func test_8() {
-// 	var x Mutex
-// 	var y Mutex
-// 	var z Mutex
-// 	ch := make(chan bool)
+func test_8() {
+	var x deadlock.Mutex
+	var y deadlock.Mutex
+	var z deadlock.Mutex
+	ch := make(chan bool)
 
-// 	go func() {
-// 		time.Sleep(time.Second)
-// 		x.Lock()
-// 		y.Lock()
-// 		z.Lock()
-// 		z.Unlock()
-// 		y.Unlock()
-// 		x.Unlock()
-// 		ch <- true
-// 	}()
+	go func() {
+		time.Sleep(time.Second)
+		x.Lock()
+		y.Lock()
+		z.Lock()
+		z.Unlock()
+		y.Unlock()
+		x.Unlock()
+		ch <- true
+	}()
 
-// 	z.Lock()
-// 	y.Lock()
-// 	x.Lock()
-// 	x.Unlock()
-// 	y.Unlock()
-// 	z.Unlock()
+	z.Lock()
+	y.Lock()
+	x.Lock()
+	x.Unlock()
+	y.Unlock()
+	z.Unlock()
 
-// 	<-ch
+	<-ch
 
-// }
+}
 
-// func test_9() {
-// 	var x Mutex
-// 	var y Mutex
+func test_9() {
+	var x deadlock.Mutex
+	var y deadlock.Mutex
 
-// 	x.Lock()
-// 	y.Lock()
-// 	y.Unlock()
-// 	x.Unlock()
+	x.Lock()
+	y.Lock()
+	y.Unlock()
+	x.Unlock()
 
-// 	y.Lock()
-// 	x.Lock()
-// 	x.Unlock()
-// 	y.Unlock()
-// }
+	y.Lock()
+	x.Lock()
+	x.Unlock()
+	y.Unlock()
+}
 
-// func test_10() {
-// 	var x Mutex
-// 	var y Mutex
-// 	var z Mutex
-// 	ch := make(chan bool, 3)
+func test_10() {
+	var x deadlock.Mutex
+	var y deadlock.Mutex
+	var z deadlock.Mutex
+	ch := make(chan bool, 3)
 
-// 	go func() {
-// 		x.Lock()
-// 		y.Lock()
-// 		y.Unlock()
-// 		x.Unlock()
-// 		ch <- true
-// 	}()
+	go func() {
+		x.Lock()
+		y.Lock()
+		y.Unlock()
+		x.Unlock()
+		ch <- true
+	}()
 
-// 	go func() {
-// 		y.Lock()
-// 		z.Lock()
-// 		z.Unlock()
-// 		y.Unlock()
-// 		ch <- true
-// 	}()
+	go func() {
+		y.Lock()
+		z.Lock()
+		z.Unlock()
+		y.Unlock()
+		ch <- true
+	}()
 
-// 	go func() {
-// 		z.Lock()
-// 		x.Lock()
-// 		x.Unlock()
-// 		z.Unlock()
-// 		ch <- true
-// 	}()
+	go func() {
+		z.Lock()
+		x.Lock()
+		x.Unlock()
+		z.Unlock()
+		ch <- true
+	}()
 
-// 	<-ch
-// 	<-ch
-// 	<-ch
-// }
+	<-ch
+	<-ch
+	<-ch
+}
 
 func test_11() {
 	var x sync.Mutex
@@ -228,5 +231,5 @@ func test_11() {
 }
 
 func main() {
-	test_11()
+	test_1()
 }
