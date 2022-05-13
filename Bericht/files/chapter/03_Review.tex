@@ -48,7 +48,7 @@ entsprechende Schritte aus, um den Nutzer zu warnen. Wird ein Lock wieder frei
 gegeben, wird der entsprechende Eintrag aus $l.loc$ entfernt.
 
 \subsection{Zyklisches Locking}\label{Kap::Rev:Cyclic}
-Mit dieser Methode werden möchte Deadlocks gefunden, die dadurch entstehen,
+Mit dieser Methode werden mögliche Deadlocks gefunden, die dadurch entstehen,
 dass alle Threads zyklisch auf die Freigabe eines Locks warten, welches von 
 einem anderen Thread gehalten wird. Ein Beispiel dafür kann in folgender Funktion
 gesehen werden:
@@ -74,7 +74,8 @@ maximale Größe überschreitet.
 Die Überprüfung, ob ein Lock $p$ zu einem Deadlock führen kann, finden bereits statt,
 bevor das Lock in $cur$ und $order$ eingetragen wird. Dazu wird für jedes Lock
 $b$ in $cur$ überprüft,
-ob $order$ einen Key $beforeAfter\{p, b\}$ besitzt, der Graph also die beiden Locks in 
+ob $order$ einen Key $beforeAfter\{p, b\}$ besitzt, der Graph also die beiden 
+Locks in 
 umgekehrter Reihenfolge enthält. Existiert solch ein Key, und wurde $b$ 
 von einer anderen Routine als $p$ in $cur$ eingefügt, bedeutet dies einen 
 Loop aus zwei Kanten im Lockgraphen und somit einen möglichen Deadlock.\\

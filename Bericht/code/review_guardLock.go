@@ -1,3 +1,4 @@
+func guardLocks() {
 	var x deadlock.Mutex
 	var y deadlock.Mutex
 	var z deadlock.Mutex
