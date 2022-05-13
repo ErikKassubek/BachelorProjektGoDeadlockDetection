@@ -20,7 +20,7 @@ Für die Erkennung werden drei verschiedene Fälle betrachtet:
 \end{itemize}
 Diese sollen im folgenden genauer betrachtet werden.
 
-\subsection{Rekursives Locking}
+\subsection{Rekursives Locking}\label{Kap::Rev:Recursive}
 Unter rekursiven Locking versteht man, dass ein Lock von dem selben Thread 
 mehrfach geschlossen wird, ohne zwischen diesen Schließungen wieder geöffnet zu
 werden. Ein Beispiel dazu ist das folgende Programm:
@@ -34,18 +34,20 @@ aber schon in Zeile 3 beansprucht wurde, muss das Programm vor Zeile 4 warten,
 bis $mu$ wieder freigegeben wird. Da dadurch aber die Freigabe in Zeile 3 
 niemals erreicht werden kann wartet das Programm für immer, befindet sich also 
 in einem Deadlock.\\
-Um solche Situation zu erkennen speichert das Programm eine Liste $l.cur$ mit 
+Um solche Situation zu erkennen speichert das Programm ein Dictionary $cur$ mit 
 allen momentan gehaltenen 
-Locks. Dabei wird neben der Information, welches Lock gehalten wird auch 
-gespeichert, von welchem Thread das Lock gehalten wird. Wird nun ein Lock neu 
-beansprucht, überprüft 
+Locks. Die Werte zu den jeweiligen Keys speichern sowohl, von welcher Go-Routine das 
+Lock momentan gehalten wird, als auch in welcher Datei und Zeile der Befehl,
+der das Locking dieses Locks zu folge hatte, zu finden ist. Wird ein Lock 
+wieder freigegeben, so wird der entsprechende Eintrag aus $cur$ entfernt. 
+Wird nun ein Lock neu beansprucht, überprüft 
 das Programm, ob dieses Lock mit dem Thread, der das Lock beanspruchen möchte 
 bereits in der Liste gehalten Locks auftaucht. Ist dies der Fall, dann nimmt das
 Programm an, dass es sich hierbei um ein mögliches Deadlock handelt und führt 
 entsprechende Schritte aus, um den Nutzer zu warnen. Wird ein Lock wieder frei
 gegeben, wird der entsprechende Eintrag aus $l.loc$ entfernt.
 
-\subsection{Zyklisches Locking}\label{Kap::Rev:Inconsistent}
+\subsection{Zyklisches Locking}\label{Kap::Rev:Cyclic}
 Mit dieser Methode werden möchte Deadlocks gefunden, die dadurch entstehen,
 dass alle Threads zyklisch auf die Freigabe eines Locks warten, welches von 
 einem anderen Thread gehalten wird. Ein Beispiel dafür kann in folgender Funktion
@@ -55,17 +57,27 @@ gesehen werden:
 \end{figure}
 Dieses Beispiel entspricht dem in Kap.~\ref*{Kap::Theo:Deadlocks} beschreiben 
 Beispiel.\\
-Die Detection funktioniert über einen Lockgraphen. Dieser wird über ein 
-Dictionary implementiert. Wird ein neuer neues Lock $p$ beanspruchen, so wird für 
-jedes Lock $b$, welches bereits gehalten wird ein  
-neuer Eintrag $beforeAfter\{b, p\}$ in das Dictionary $l.order$ hinzugefügt. 
-Der Key gibt somit die beiden Locks an und speichert auch, welches der Beiden Locks
-zuerst beansprucht wurde. Die Werte, die dem Key zugeordnet sind, beinhalten 
-Information darüber, über welche Funktion, bzw. Routine das Lock beansprucht wurde.
-Um zu überprüfen ob ein neues Lock zu einem Deadlock führen kann, wird überprüft,
-ob $l.order$ einen Key $beforeAfter\{p, b\}$ besitzt, der die beiden Locks somit in 
-umgekehrter Reihenfolge enthält. Existiert solch ein Key, bedeutet dies einen 
-Loop aus zwei Kanten im Lockgraphen und somit einen möglichen Deadlock. 
+Für die Detektion verwendet das Programm zwei Dictionaries. Das erste ist $cur$, 
+welches bereits in \ref{Kap::Rev:Cyclic} betrachten wurde.\\
+Das andere Dictionary $order$, definiert mit seinen Keys die Kanten eines Lock-Graphen.
+Die Keys bestehen dabei aus einer Struktur $beforeAfter$, die Referenzen zu den beiden
+Locks speicherte, welche von der Kante im Graphen verbunden werden.
+Wird ein neues Lock $p$ beanspruchen, so wird für 
+jedes Lock $b$, welches sich momentan in $cur$ befindet ein  
+neuer Eintrag $beforeAfter\{b, p\}$ in $order$ hinzugefügt. 
+Die Werte, die für jeden Key in $order$ gespeichert werden, entsprechen 
+den Information, die auch in $cur$ für die beiden Locks gespeichert wird. Allerdings 
+wird auf die Speicherung der ID der erzeugenden Go-Routine verzichtet, da sie 
+nicht benötigt wird.
+Information aus $order$ werden nur entfernt, wenn $order$ eine festgelegte 
+maximale Größe überschreitet. 
+Die Überprüfung, ob ein Lock $p$ zu einem Deadlock führen kann, finden bereits statt,
+bevor das Lock in $cur$ und $order$ eingetragen wird. Dazu wird für jedes Lock
+$b$ in $cur$ überprüft,
+ob $order$ einen Key $beforeAfter\{p, b\}$ besitzt, der Graph also die beiden Locks in 
+umgekehrter Reihenfolge enthält. Existiert solch ein Key, und wurde $b$ 
+von einer anderen Routine als $p$ in $cur$ eingefügt, bedeutet dies einen 
+Loop aus zwei Kanten im Lockgraphen und somit einen möglichen Deadlock.\\
 Dies bedeutet aber auch, dass das Programm nicht in der Lage ist, ein Kreis 
 in einem Lock-Graphen zu finden, wenn dieser aus drei oder mehr Kanten besteht.
 Soche Situationen können aber dennoch zu Deadlocks führen. Ein Beispiel dafür 
@@ -78,7 +90,8 @@ Routine vor ihrer zweiten Zeile warten und es kommt zu einem Deadlock. Da diese
 Konstellation in einem Lockgraphen aber zu einem Kreis mit einer Länge von drei 
 Kanten führen würde, kann das Programm den möglichen Deadlock nicht erkennen.\\
 Ein weiteres Problem besteht darin, dass das Programm Einträge aus $l.order$ nicht 
-löscht, wenn ein Lock wieder frei gegeben wird. Sie werden nur entfernt, wenn 
+löscht, wenn ein Lock wieder frei gegeben wird und auch nicht überprüft, das die 
+Kanten in verschiedenen Go-Routinen erzeugt wurden. Sie werden nur entfernt, wenn 
 das Dictionary eine bestimmte Größe überschreitet. Dies kann zu false-positives
 führen. Ein Beispiel dazu wäre die folgende Funktion:  
 \begin{figure}[H]
@@ -121,20 +134,34 @@ festgelegte maximale Wartezeit von $30 s$ nimmt das Programm an, es sei in einen
 Deadlock gekommen, obwohl kein Solcher vorliegt, und auch kein Deadlock möglich 
 ist.
 
-\subsection{False Negatives}
-Neben den bereits in den vorherigen Abschnitten betrachteten Fällen, bei denen 
-ein möglicher Deadlock nicht erkannt wurde, gibt es noch andere Fälle, bei denen
-dies der Fall ist. Ein Fall,
+\subsection{False Negatives / Positives}
+Bei False Negatives or False Positives handelt es sich um Fälle, bei denen es 
+zu einem Deadlock kommen kann, ohne dass dieser Detektiert wird, bz. Fälle die
+nicht zu einem 
+Deadlock führen können, aber dennoch als Deadlock angezeigt werden. 
+Neben den in den vorherigen Abschnitten gezeigten Fällen, kann es auch in weiteren 
+Fällen zu solchem Verhalten kommen.\\
+Ein Fall,
 bei dem ein Deadlock auftreten könnte, welcher von dem Programm aber nicht erkannt
-wird, entsteht bei verschachtelten Routinen. Dabei erzeugt eine go-Routine eine 
+wird (False Negative), entsteht bei verschachtelten Routinen. Dabei erzeugt eine go-Routine eine 
 weitere.
 \begin{figure}[H]
     \lstinputlisting{code/review_nested.go}
 \end{figure}
 Diese Funktion ist bezüglich ihres Ablaufs identisch zu der Funktion 
-circularLocking in Kapitel~\ref*{Kap::Rev:Inconsistent}. Dennoch ist es dem 
+circularLocking in Kapitel~\ref*{Kap::Rev:Cyclic}. Dennoch ist es dem 
 Programm aufgrund der Verschachtelten go-Routine nicht möglich, den möglichen 
-Deadlock zu erkennen. 
+Deadlock zu erkennen. \\
+Ein Fall, bei dem es zu False Positives kommen kann, wird durch Guard-Locks
+ausgelöst. In dem folgenden Beispiel wird ein möglicher Deadlock der Locks $x$
+und $y$ durch das Guard-Lock $z$ verhindert.
+\begin{figure}[H]
+    \lstinputlisting{code/review_guardLock.go}
+\end{figure}
+Da sich immer nur eine der beiden Routinen in dem Bereich aufhalten kann, der von 
+$z$ begrenzt wird, ist ein Deadlock in diesem Fall nicht möglich. Es wird aber dennoch
+ein möglicher Deadlock angezeigt, da das Programm nicht in der Lage ist, eine solches 
+Guard-Lock zu erkennen.
 
 \section{Go Runtime Deadlock Detection}
 Go besitzt einen eigenen Detektor zur Erkennung von Deadlocks. Allerdings kann 

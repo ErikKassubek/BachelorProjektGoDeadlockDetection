@@ -44,7 +44,8 @@ Ein Lock-Graph ist ein gerichteter Graph $G = (L, E)$, Dabei ist $L$ die Menge a
 \end{align*}
 wobei $aqr(l_1)[t_i]$ bedeutet, dass $aqr(l_1)$ zum Zeitpunkt $t_i$ ausgeführt wird und equivalent für $rel(l_1)[t_i]$.\\
 Ein Deadlock kann nun auftreten wenn es innerhalb dieses Graphen einen Kreis gibt. Um zu verhindern, dass ein false positive dadurch ausgelöst wird, dass alle Kanten in einem solchen Kreis aus dem selben Thread kommen (wodurch kein Deadlock entstehen kann), können die Kanten noch zusätzlich mit einem Label versehen werden, welche den Thread identifiziert, durch welchen die Kante in den Graphen eingefügt wurde. Bei dem Testen nach Zyklen muss nun beachtet werden, dass nicht alle Kanten in dem Kreis das selbe Label haben \cite{bensalem}. 
-\subsection{Lock-Bäume }
+\subsection{Lock-Bäume}
+\textcolor{red}{Abschnitt muss auf jeden Fall nochmal überarbeitet werden}
 Die Detektion von Deadlocks mit Hilfe von Lock-Bäumen besteht darin, den 
 Verlauf von Lock Befehlen als Lock-Bäume zu speichern, wobei jeder Thread 
 einen eigenen Baum erzeugt. Neben dem jeweiligen Baum hat jeder Thread 
