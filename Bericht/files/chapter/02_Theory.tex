@@ -72,7 +72,48 @@ Anders als in Lock-Graphen können Bäume nur Deadlocks-Erkennen, die durch das
 zyklische Warten von zwei Threads entstehen. Sobald drei oder mehr Thread beteiligt
 sind, können solche Deadlocks nicht mehr erkannt werden.
 
-
+\subsection*{IGoodLock}
+TODO: write explenation of IGoodLock
 
 \subsection{UNDEAD}
-\textcolor{red}{Funktionsweise UNDEAD}
+Undead \cite{zhou} ist ein Algorithmus zur Detektion von Deadlocks basierend auf
+Lock-Bäumen. Er besteht aus drei Teilen: der Logging-Phase, einer periodischen
+Detektion von Deadlocks während des Programmablaufs und einer vollständigen
+Detektion am Ende des Programms.\\ \\
+\paragraph*{Logging-Phase} UNDEAD implementiert Drop-in-Replacements für Lock,
+Trylock und Unlock Befehle. Diese führen das eigentliche Locking aus, und 
+speichern gleichzeitig Informationen, die für die Detektion von Deadlocks 
+benötigt werden. UNDEAD legt dabei besonders großen Wert darauf, dass nur tatsächlich
+Notwendige Informationen gespeichert werden.\\
+Die nötigen Informationen werden für jeden Thread einzeln gespeichert. Diese 
+bestehen insbesondere in den momentan gelockten Locks sowie den Lock-Dependencies.
+Zusätzlich werden noch Informationen zu den Callstacks verschiedener verschiedener 
+Locks gespeichert.\\
+Für die Speicherung der Dependencies wird pro Thread eine Hash-Table verwendet um 
+zu verhindern, dass die Hash-Table gegen einen gleichzeitigen Zugriff von 
+mehreren Threads geschützt werden muss.
+Bevor eine neue Abhängigkeit gespeichert wird, wird überprüft, ob sie sich 
+bereits in den gespeicherten Abhängigkeiten befindet. Ist dies der Fall, so 
+wird sie nicht erneut gespeichert.
+Als Key für einen Eintrag wird eine Kombination aus zwei der beteiligten Locks 
+verwendet. Ist zum Beispiel Lock $l_1$
+abhängig von den Locks ${l_2, l_3}$, dann wird der XOR Wert der Speicheradressen
+der beiden innersten Locks (in diesem Fall $l_1$ und $l_2$) als Key verwendet.
+Dies reduziert die Wahrscheinlichkeit für Konflikte in der Hash-Table \cite{zhou}.
+Bei der Speicherung werden nur relevante Informationen gespeichert. Unter anderem 
+werden keine Informationen über single-level Locks gespeichert. Außerdem wird die 
+Beanspruchung von Locks nicht gespeichert, wenn nur ein Thread aktiv ist. 
+\\
+Da die Abfrage der Informationen über den Stacktrace sehr teuer bezüglich 
+seiner Laufzeit sein kann, versucht UNDEAD die Abrufung solcher Daten 
+soweit wie möglich zu reduzieren. So werden zwar Callstacks bei der Initialisierung 
+von Locks immer gespeichert, Callstacks für die Beanspruchung von Locks aber 
+nicht in allen Fällen. Wenn es sich um Single-Level Locks handelt, werden keine 
+Stacks gespeichert. Auf eine Speicherung wird auch verzichtet, wenn die Speicherung
+der Stacks für die Berichterstattung nicht notwendig sind.
+\textcolor{red}{Mehr beschreiben, wann sie nicht notwendig ist.}
+\paragraph*{Periodische Detektion}
+
+
+\paragraph*{Vollständige Detektion}
+
