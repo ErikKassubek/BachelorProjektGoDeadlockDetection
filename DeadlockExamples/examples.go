@@ -178,5 +178,5 @@ func actualDeadlock() {
 }
 
 func main() {
-	potentialDeadlockThreeEdgeCirc()
+	potentialDeadlock1()
 }
