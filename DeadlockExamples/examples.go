@@ -7,10 +7,7 @@ import (
 	deadlock "github.com/ErikKassubek/Deadlock-Go"
 )
 
-func potentialDeadlock1() {
-	deadlock.Initialize()
-	defer deadlock.Finalize()
-
+func potentialDeadlock1(c chan<- bool) {
 	x := deadlock.NewLock()
 	y := deadlock.NewLock()
 	z := deadlock.NewLock()
@@ -21,9 +18,9 @@ func potentialDeadlock1() {
 
 		z.Lock()
 		z.Unlock()
+		time.Sleep(time.Second)
 		x.Lock()
 		y.Lock()
-		time.Sleep(time.Second * time.Duration(rand.Float64()))
 		y.Unlock()
 		x.Unlock()
 
@@ -35,7 +32,6 @@ func potentialDeadlock1() {
 
 		y.Lock()
 		x.Lock()
-		time.Sleep(time.Second * time.Duration(rand.Float64()))
 		x.Unlock()
 		y.Unlock()
 
@@ -45,13 +41,12 @@ func potentialDeadlock1() {
 	<-ch
 	<-ch
 
+	c <- true
+
 }
 
 // test with 3 edge loop
-func potentialDeadlockThreeEdgeCirc() {
-	deadlock.Initialize()
-	defer deadlock.Finalize()
-
+func potentialDeadlockThreeEdgeCirc(c chan<- bool) {
 	x := deadlock.NewLock()
 	y := deadlock.NewLock()
 	z := deadlock.NewLock()
@@ -97,12 +92,11 @@ func potentialDeadlockThreeEdgeCirc() {
 	<-ch
 	<-ch
 
+	c <- true
+
 }
 
-func potentialDeadlockGuardLocks() {
-	deadlock.Initialize()
-	defer deadlock.Finalize()
-
+func noPotentialDeadlockGuardLocks(c chan<- bool) {
 	x := deadlock.NewLock()
 	y := deadlock.NewLock()
 	z := deadlock.NewLock()
@@ -139,11 +133,11 @@ func potentialDeadlockGuardLocks() {
 	<-ch
 	<-ch
 
+	c <- true
+
 }
 
-func actualDeadlock() {
-	deadlock.Initialize()
-
+func actualDeadlock(c chan<- bool) {
 	x := deadlock.NewLock()
 	y := deadlock.NewLock()
 	z := deadlock.NewLock()
@@ -175,8 +169,6 @@ func actualDeadlock() {
 
 	<-ch
 	<-ch
-}
 
-func main() {
-	potentialDeadlock1()
+	c <- true
 }

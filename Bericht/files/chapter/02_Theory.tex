@@ -2,13 +2,24 @@
 
 \section{Deadlocks} \label{Kap::Theo:Deadlocks}
 
-Ein Deadlock ist ein Zustand in einem nebenläufigen Programm, indem alle laufenden Tread zyklisch auf die Freigabe von Ressourcen warten.\\
-Im großen und ganzen lassen sich Deadlocks in zwei Gruppen einteilen: Ressourcen-Deadlocks und Kommunikations-Deadlocks \cite{zhou}.
-Im folgenden sollen jedoch nur durch Locks erzeugte Ressourcen-Deadlocks betrachtet werden.\\
-Locks gehören zu den am weitesten verbreiteten Mechanismen um sicher zu stellen, dass sich in einem nebenläufigen Programm immer nur ein Thread in einem kritischen Bereich aufhalten kann \cite*{zhou}, bzw.
+Ein Deadlock ist ein Zustand in einem nebenläufigen Programm, indem alle 
+laufenden Tread zyklisch auf die Freigabe von Ressourcen warten.\\
+Im großen und ganzen lassen sich Deadlocks in zwei Gruppen einteilen: 
+Ressourcen-Deadlocks und Kommunikations-Deadlocks \cite{zhou}.
+Im folgenden sollen jedoch nur durch Locks erzeugte Ressourcen-Deadlocks 
+betrachtet werden.\\
+Locks gehören zu den am weitesten verbreiteten Mechanismen um sicher zu stellen,
+dass sich in einem nebenläufigen Programm immer nur ein Thread in einem 
+kritischen Bereich aufhalten kann \cite*{zhou}, bzw.
 dass immer nur maximal ein Tread gleichzeitig auf eine gemeinsame Resource, wie 
-z.B. eine Variable zugreifen kann. Möchte ein Thread $T_1$ nun in einen Bereich eintreten, der durch ein Lock, welches bereits von einem anderen Thread $T_0$ beansprucht wird, geschützt ist, muss es so lange vor dem Lock warten, bis dieses von $T_0$ wieder frei gegeben wird.\\
-Ein Deadlock kann nun entstehen, wenn all Treads vor einem solchen Lock warten müssen, wobei die Locks immer von einem anderen Tread gehalten werden. Im folgende bezeichnet $acq_i(l)$, dass das Lock $l$ von Prozess $T_i$ beansprucht und $rel_i(l)$, dass $l$ von $T_i$ wieder freigegeben wird. Man betrachte nun das folgende Beispiel \cite{sulzmann} mit den Treads $T_1$ und $T_2$:
+z.B. eine Variable zugreifen kann. Möchte ein Thread $T_1$ nun in einen Bereich 
+eintreten, der durch ein Lock, welches bereits von einem anderen Thread $T_0$ beansprucht wird, geschützt ist, muss es so lange vor dem Lock warten, bis dieses von $T_0$ wieder frei gegeben wird.\\
+Ein Deadlock kann nun entstehen, wenn all Treads vor einem solchen Lock warten 
+müssen, wobei die Locks immer von einem anderen Tread gehalten werden. 
+Im folgende bezeichnet $acq_i(l)$, dass das Lock $l$ von Prozess $T_i$ 
+beansprucht und $rel_i(l)$, dass $l$ von $T_i$ wieder freigegeben wird. 
+Man betrachte nun das folgende Beispiel \cite{sulzmann} mit den Treads 
+$T_1$ und $T_2$:
 \begin{table}[H]
     \centering
     \begin{tabular}{ccc}
@@ -34,86 +45,49 @@ Da $T_1$ und $T_2$ gleichzeitig ablaufen ist folgender Ablauf möglich:
     6. &                & $B-acq_{2}(y)$
     \end{tabular}
 \end{table}
-Dabei impliziert $B-acq_i(l)$, dass $acq_{i}(l)$ nicht ausgeführt werden konnte, bzw. dass der Thread $T_i$ vor dem Lock halten muss, da das Lock bereits von einem anderen Tread beansprucht wird. In diesem Beispiel wartet nun $T_1$ darauf, dass das Lock $x$ geöffnet wird und $T_2$ wartet darauf, dass Lock $y$ geöffnet wird. Da nun aller Thread warten müssen, bis ein Lock freigegeben wird, allerdings keiner der Threads weiter laufen kann um ein Lock zu öffnen, kommt es zum Stillstand. Dieser Zustand wird als Deadlock bezeichnet.
+Dabei impliziert $B-acq_i(l)$, dass $acq_{i}(l)$ nicht ausgeführt werden konnte,
+bzw. dass der Thread $T_i$ vor dem Lock halten muss, da das Lock bereits von 
+einem anderen Tread beansprucht wird. In diesem Beispiel wartet nun $T_1$ 
+darauf, dass das Lock $x$ geöffnet wird und $T_2$ wartet darauf, dass Lock 
+$y$ geöffnet wird. Da nun aller Thread warten müssen, bis ein Lock freigegeben 
+wird, allerdings keiner der Threads weiter laufen kann um ein Lock zu öffnen, 
+kommt es zum Stillstand. Dieser Zustand wird als Deadlock bezeichnet.
 \section{Deadlocks-Detection}
-Deadlocks in Programmen sind Fehler, die oft den vollständige Abbruch eines Programmes zu Folge haben, wenn keine zusätzliche Routine zur Auflösung von Deadlocks implementiert ist. Aus diesem Grund möchte man bereits bei der Implementierung eines Programmes verhindern, dass ein solcher Deadlock auftreten kann. Unglücklicherweise kann es ohne zusätzliche Hilfsmittel schwierig sein, einen solchen Deadlock zu erkennen, da das Auftreten eines Deadlock von dem genauen Ablauf der verschiedenen Threads abhängt.\\ Um dennoch Deadlocks detektieren zu können, können Lock-Graphen oder Lock-Bäume verwendet werden.
+Deadlocks in Programmen sind Fehler, die oft den vollständige Abbruch eines 
+Programmes zu Folge haben, wenn keine zusätzliche Routine zur Auflösung von 
+Deadlocks implementiert ist. Aus diesem Grund möchte man bereits bei der 
+Implementierung eines Programmes verhindern, dass ein solcher Deadlock auftreten 
+kann. Unglücklicherweise kann es ohne zusätzliche Hilfsmittel schwierig sein, 
+einen solchen Deadlock zu erkennen, da das Auftreten eines Deadlock von dem 
+genauen Ablauf der verschiedenen Threads abhängt.\\ Um dennoch Deadlocks 
+detektieren zu können, können Lock-Graphen oder Lock-Bäume verwendet werden.
 \subsection{Lock-Graphen}
-Ein Lock-Graph ist ein gerichteter Graph $G = (L, E)$, Dabei ist $L$ die Menge aller Locks $E \subseteq L \times L$ ist definiert als $(l_1, l_2) \in E$ genau dann wenn es einen Tread $T$ gibt, welcher $acq(l_2)$ ausgeführt, während er bereits das Lock $l_1$ hält \cite{bensalem}. Mathematisch ausgedrückt gilt also 
+Ein Lock-Graph ist ein gerichteter Graph $G = (L, E)$, Dabei ist $L$ die Menge 
+aller Locks $E \subseteq L \times L$ ist definiert als $(l_1, l_2) \in E$ genau 
+dann wenn es einen Tread $T$ gibt, welcher $acq(l_2)$ ausgeführt, während er 
+bereits das Lock $l_1$ hält \cite{bensalem}. Mathematisch ausgedrückt gilt also 
 \begin{align*}
     (l_1, l_2) \in E \Leftrightarrow \exists t_1, t_3 \not\exists t_2\ ((t_1 < t_2 < t_3) \land aqr(l_1)[t_1] \land rel(l_1)[t_2] \land  aqr(l_2)[t_3])
 \end{align*}
-wobei $aqr(l_1)[t_i]$ bedeutet, dass $aqr(l_1)$ zum Zeitpunkt $t_i$ ausgeführt wird und equivalent für $rel(l_1)[t_i]$.\\
-Ein Deadlock kann nun auftreten wenn es innerhalb dieses Graphen einen Kreis gibt. Um zu verhindern, dass ein false positive dadurch ausgelöst wird, dass alle Kanten in einem solchen Kreis aus dem selben Thread kommen (wodurch kein Deadlock entstehen kann), können die Kanten noch zusätzlich mit einem Label versehen werden, welche den Thread identifiziert, durch welchen die Kante in den Graphen eingefügt wurde. Bei dem Testen nach Zyklen muss nun beachtet werden, dass nicht alle Kanten in dem Kreis das selbe Label haben \cite{bensalem}. 
+wobei $aqr(l_1)[t_i]$ bedeutet, dass $aqr(l_1)$ zum Zeitpunkt $t_i$ ausgeführt 
+wird und equivalent für $rel(l_1)[t_i]$.\\
+Ein Deadlock kann nun auftreten wenn es innerhalb dieses Graphen einen Kreis 
+gibt. Um zu verhindern, dass ein false positive dadurch ausgelöst wird, dass 
+alle Kanten in einem solchen Kreis aus dem selben Thread kommen (wodurch kein 
+Deadlock entstehen kann), können die Kanten noch zusätzlich mit einem Label 
+versehen werden, welche den Thread identifiziert, durch welchen die Kante in 
+den Graphen eingefügt wurde. Bei dem Testen nach Zyklen muss nun beachtet 
+werden, dass nicht alle Kanten in dem Kreis das selbe Label haben 
+\cite{bensalem}. 
 \subsection{Lock-Bäume}
-\textcolor{red}{Abschnitt muss auf jeden Fall nochmal überarbeitet werden}
-Die Detektion von Deadlocks mit Hilfe von Lock-Bäumen besteht darin, den 
-Verlauf von Lock Befehlen als Lock-Bäume zu speichern, wobei jeder Thread 
-einen eigenen Baum erzeugt. Neben dem jeweiligen Baum hat jeder Thread 
-zusätzlich einen Knoten in diesem Baum als $current$ Knoten.
-Die Bäume werden folgendermaßen aufgebaut. Eine Lock Operation erzeugt einen 
-neuen Knoten als Kind des $current$-Knoten, solange das Lock nicht vorher 
-bereits in diesem Thread aufgetaucht ist. Dieser neue Knoten wird nun als 
-$current$ Knoten gesetzt. Sollte das Lock bereits betrachtet worden sein und 
-der Knoten, der dieses Lock repräsentiert ist ein Nachfolger von $current$, so 
-wird $current$ auf diesen Nachfolgeknoten gesetzt. Wird ein Lock freigegeben,
-und nicht anderweitig von dem Thread gehalten, wird der aktuelle Vorgänger des 
-$current$ Knoten zu dem neuen $current$ Knoten~\cite{havelund}.\\
-Nachdem das Programm abgeschlossen wurde werden die erzeugten Bäume paarweise 
-miteinander verglichen. Man betrachte die Bäume $t_1, t_2$. Man betrachte 
-alle Knoten $n_1$ in $t_1$ und alle Knoten $n_2$ in $t_2$ wenn $n_2$ das selbe 
-Lock repräsentiert wie $n_1$. Es wird nun überprüft, dass kein Lock unter $n_1$
-in $t_1$ in $t_2$ über $n_2$ ist. Sollte dies der Fall sein, ist dies ein Zeichen 
-für ein mögliches Deadlock. Um zu verhindern, dass Deadlocks, die durch ein 
-anderes Lock unmöglich gemacht werden fälschlicherweise detektiert werden,
-werden Knoten in $t_2$ markiert, sobald sie betrachtet wurden. Knoten unterhalb
-markierter Knoten werden nicht betrachtet, bis die Markierung wieder entfernt wird,
-nachdem alle entsprechenden Knoten betrachtet wurde~\cite{havelund}.
-Anders als in Lock-Graphen können Bäume nur Deadlocks-Erkennen, die durch das 
-zyklische Warten von zwei Threads entstehen. Sobald drei oder mehr Thread beteiligt
-sind, können solche Deadlocks nicht mehr erkannt werden.
-
-\subsection*{IGoodLock}
-TODO: write explenation of IGoodLock
-
-\subsection{UNDEAD}
-Undead \cite{zhou} ist ein Algorithmus zur Detektion von Deadlocks basierend auf
-Lock-Bäumen. Er besteht aus drei Teilen: der Logging-Phase, einer periodischen
-Detektion von Deadlocks während des Programmablaufs und einer vollständigen
-Detektion am Ende des Programms.\\ \\
-\paragraph*{Logging-Phase} UNDEAD implementiert Drop-in-Replacements für Lock,
-Trylock und Unlock Befehle. Diese führen das eigentliche Locking aus, und 
-speichern gleichzeitig Informationen, die für die Detektion von Deadlocks 
-benötigt werden. UNDEAD legt dabei besonders großen Wert darauf, dass nur tatsächlich
-Notwendige Informationen gespeichert werden.\\
-Die nötigen Informationen werden für jeden Thread einzeln gespeichert. Diese 
-bestehen insbesondere in den momentan gelockten Locks sowie den Lock-Dependencies.
-Zusätzlich werden noch Informationen zu den Callstacks verschiedener verschiedener 
-Locks gespeichert.\\
-Für die Speicherung der Dependencies wird pro Thread eine Hash-Table verwendet um 
-zu verhindern, dass die Hash-Table gegen einen gleichzeitigen Zugriff von 
-mehreren Threads geschützt werden muss.
-Bevor eine neue Abhängigkeit gespeichert wird, wird überprüft, ob sie sich 
-bereits in den gespeicherten Abhängigkeiten befindet. Ist dies der Fall, so 
-wird sie nicht erneut gespeichert.
-Als Key für einen Eintrag wird eine Kombination aus zwei der beteiligten Locks 
-verwendet. Ist zum Beispiel Lock $l_1$
-abhängig von den Locks ${l_2, l_3}$, dann wird der XOR Wert der Speicheradressen
-der beiden innersten Locks (in diesem Fall $l_1$ und $l_2$) als Key verwendet.
-Dies reduziert die Wahrscheinlichkeit für Konflikte in der Hash-Table \cite{zhou}.
-Bei der Speicherung werden nur relevante Informationen gespeichert. Unter anderem 
-werden keine Informationen über single-level Locks gespeichert. Außerdem wird die 
-Beanspruchung von Locks nicht gespeichert, wenn nur ein Thread aktiv ist. 
-\\
-Da die Abfrage der Informationen über den Stacktrace sehr teuer bezüglich 
-seiner Laufzeit sein kann, versucht UNDEAD die Abrufung solcher Daten 
-soweit wie möglich zu reduzieren. So werden zwar Callstacks bei der Initialisierung 
-von Locks immer gespeichert, Callstacks für die Beanspruchung von Locks aber 
-nicht in allen Fällen. Wenn es sich um Single-Level Locks handelt, werden keine 
-Stacks gespeichert. Auf eine Speicherung wird auch verzichtet, wenn die Speicherung
-der Stacks für die Berichterstattung nicht notwendig sind.
-\textcolor{red}{Mehr beschreiben, wann sie nicht notwendig ist.}
-\paragraph*{Periodische Detektion}
-
-
-\paragraph*{Vollständige Detektion}
-
+Anders als bei Lock-Graphen, speichert bei Lock-Bäumen jede Routine seine 
+seine eigenen Abhängigkeiten. Dies bedeutet, dass der Lock-Baum $b$ der 
+Routine $r$ genau dann die Kanet $x->y$ besitzt, wenn in Routine $r$ das 
+Lock $y$ beansprucht wird, während in $r$ das Lock $x$ bereits gehalten ist.\\
+Diese Bäume haben mehrere Vorteile gegenüber Lock-Graphen. Da jede Routine seine 
+eigene Datenstruktur hat, wird verhindert, dass es durch 
+gleichzeitigen Zugriff verschiedener Routinen auf die selbe Datenstruktur zu 
+Problemen kommen kann. Zudem muss die Zugehörigkeit der Abhängigkeiten zu 
+verschiedenen Routinen nicht explizit gespeichert werden. Ein weiterer Vorteil 
+besteht darin, dass Guard-Locks bei Lock0-Bäumen, anders alb ein Lock-Graphen
+nicht zu False-Positives kommt.  

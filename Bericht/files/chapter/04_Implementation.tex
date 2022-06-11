@@ -1,1 +1,278 @@
-\chapter{Implementierung eines Deadlock-Detectors}
+\chapter{Implementierung eines Deadlock-Detectors}\label{Chap::Implementation}
+Im folgenden soll die Implementierung eines Deadlock-Detektors basierend auf
+dem Undead Algorithmus \cite{zhou} beschrieben werden. Die eigentliche 
+Implementierung in Go kann in \cite{implementation} gefunden werden.\\
+Der Detektor ist, wie auch der in \ref{Chap::Review:go-deadlock} beschriebene 
+Detektor, als Drop-In-Replacement ausgelegt. Das bedeutet, dass die 
+Funktionen des Detektors direkt in den Programm-Code integriert werden. Ein 
+Beispiel dazu ist das folgende Programm:
+\begin{figure}[H]
+    \lstinputlisting{code/implementation_ex_1.go}
+\end{figure}
+Locks, die in Go normalerweise über sync.Mutex erzeugt und gehandhabt werden, 
+werden dabei durch eigens definierte Locks ersetzt. Auf diesen können dann Lock, 
+TryLock und Unlock Operationen ausgeführt werden.\\
+Im folgende sollen die verschiedenen Phasen 
+\begin{itemize}
+    \item Optionen
+    \item Initialisierung
+    \item Logging
+    \item Periodische Detektion
+    \item Vollständige Detektion
+    \item Meldung
+\end{itemize}
+des Detektors beschrieben werde. 
+
+
+\section{Optionen} \label{Chap::Implementation:Options}
+Die Funktionsweise des Detektors kann durch verschiedene Optionen 
+verändert werden. Diese beinhalten die Aktivierung und Deaktivierung der 
+periodischen und vollständigen Detektion, die Festlegung der Abstände, in denen 
+die periodische Detektion aktiviert wird, die Entscheidung ob vollständige 
+Call-Stacks oder nur vereinfachte Informationen gesammelt werden sowie 
+ob Informationen über Single-level-Locks gesammelt werden sollen.\\
+Zudem können maximale Werte für die Anzahl der Dependencies und Routinen, 
+die maximale Größe der gesammelten Call-Stacks sowie die maximale Tiefe von 
+der Lock-Bäume bestimmt werden. Diese Werte haben besonders Einfluss auf den 
+benötigten Speicherplatz. Sind sie allerdings zu klein Gewählt, wird das 
+Programm mit einer entsprechenden Fehlermeldung abgebrochen.\\
+Diese Werte müssen, wenn sie anders als die default Werte gesetzt werden sollen 
+vor der Initialisierung des Detektor gesetzt werden.
+
+\section{Initialisierung} \label{Chap::Implementation:Initialisierung}
+Sowohl der eigentliche Detektor als auch jede neue go-Routine muss initialisiert 
+werden.\\
+Die Initialisierung, welche über ``deadlock.Initialize()'' gestartet wird, hat
+lediglich die Aufgabe, die periodische Detektion zu starten und in regelmäßigen 
+Abständen auszuführen. Dazu wird eine go-Routine erzeugt, die über einen Ticker
+die periodische Detektion in festgelegten Abständen (default: 2s) started. Die
+eigentliche Funktionsweise der periodischen Detektion wird in Kapitel 
+\ref{Chap::Implementation:Periodic} genauer erklärt.\\
+Jeder go-Routine, welche durch ``deadlock.NewRoutine()'' kreiert wird, wird ein
+Struct zugeordnet, welches neben dem Index der Routine auch alle Informationen 
+speichert, die für den Aufbau des Lock-Baums nötig sind. Eine genauere 
+Beschreibung dieser Informationen befindet sich im Kapitel 
+\ref{Chap::Implementation:Logging}. Diese Routinen werden in einem globalen 
+Slice ``routines'' gespeichert. Zusätzlich wird noch ein Dictionary ``mapIndex'' 
+angelegt. Dieses ordnet für jede Routine dem Index dieser Routine die Position
+in ``routines'' zu. 
+Diese Aufteilung macht es möglich auf eine Routine
+ohne langes suchen zuzugreifen. Da jede Routine nur auf sein eigenes Element in 
+``routines'' zugreift, ist es so möglich, auf mehrere Elemente in ``routines''
+gleichzeitig zuzugreifen, ohne die gesamte Liste für andere Routinen blocken zu 
+müssen. Dies wäre nicht möglich, wenn die Routinen direkt in einem Dictionary
+gespeichert werden würden.
+
+
+
+\section{Logging-Phase} \label{Chap::Implementation:Logging}
+Der Detektor implementiert Drop-in-Replacements für Locks, auf denen Lock,
+TryLock und Unlock Operationen definiert sind. 
+Diese führen das eigentliche Locking aus, und 
+speichern gleichzeitig Informationen, die für die Detektion von Deadlocks 
+benötigt werden.\\
+Ein Lock besteht aus einem ``sync.Mutex'' Objekt, mit dem das eigentliche
+Locking im Hintergrund ausgeführt wird, sowie einer Liste von ``callerInfo''
+Objekten. Mit diesen werden Informationen darüber gespeichert, wo die 
+Locks erzeugt wurden, und wo Logging Operationen ausgeführt wurden. Diese 
+Informationen werden verwendet wenn ein tatsächlich auftretendes 
+oder potentielles Deadlock gefunden wird, um die in diesen Deadlocks involvierten 
+Locks in der Fehlermeldung zu identifizieren. Neben der Information, ob es sich 
+um eine Lock-Initialisierung oder einen Lock-Vorgang handelt, werden je nachdem
+wie die Optionen (vgl. \ref{Chap::Implementation:Options}) gesetzt sind entweder 
+ein vollständiger Call-Stack oder lediglich Informationen über die Datei und 
+Zeile, in denen der Vorgang im Programmcode vorkommt gespeichert.\\
+Im folgenden sollen die drei auf Locks definierten Operationen genauer betrachtet
+werden.
+\subsection{Lock}\label{Chap::Implementation:Logging.Lock}
+Der Lock-Vorgang besteht aus zwei Schritten. Zum einen wird das tatsächlich
+sync.Mutex-Lock beansprucht. Zum anderen wird die Datenstruktur, welche später 
+für die Detektion von Deadlocks verwendet wird aktualisiert. Dies geschieht 
+allerdings nur, wenn momentan mehr als eine Routine läuft. UNDEAD geht davon
+aus, dass Deadlock hauptsächlich durch die Kombination von mehreren gleichzeitig
+laufenden Routinen entsteht. Solange demnach nur eine Routine läuft kann es 
+nicht zu einem solchen Deadlock kommen, und die entsprechenden Datenstrukturen 
+werden nicht aktualisiert, um die Performance des Programmes zu verbessern.
+Die einige Möglichkeit, bei der ein Deadlock auftreten kann, wenn insgesamt 
+nur eine Routine läuft, besteht in doppeltem Locking, wenn also ein Lock 
+von der selben Routine mehrfach beansprucht wird, ohne zwischendurch frei 
+gegeben zu werden. Allerdings ist UNDEAD auch in Situationen, in dehnen 
+mehrere Routinen laufen nicht in der Lage, solche Deadlocks zu erkennen (s. 
+\ref{Chap::Implementation:Periodic}), 
+auch wenn die Detektion nicht besonders kompliziert wäre.\\
+Eine andere Situation, bei der dies zu einem False-Negativ führen könnte, ist 
+folgende. Man betrachte eine Situation mit zwei Routinen R1 und R2, welche 
+gleichzeitig starten. Man nehme nun an, dass in einem Durchlauf R2 bereits 
+beendet wurde, während R1 noch läuft. In diesem Fall werden Lock-Operationen,
+in R1 nicht mehr betrachtet. Wenn R2 in einem erneuten Durchlauf nun allerdings 
+länger benötigt als in dem ersten Durchlauf, können diese zuvor ignorierten 
+Locks dennoch zu einem Deadlock führen, der im ersten Durchlauf aber nicht
+erkannt werden konnte.\\
+Angenommen es laufen mehr als eine Routine und Deadlock-Detektion ist in den 
+Optionen nicht vollständig deaktiviert, wird die Datenstruktur zur 
+Deadlock-Detektion aktualisiert. Jede Routine verfügt dabei, wie bereits in 
+\ref{Chap::Implementation:Initialisierung} beschrieben, über eine eigene 
+Datenstruktur, über die die entsprechenden Lock-Bäume aufgebaut werden. 
+Eine Dependency wird dabei über ein Objekt dargestellt, welches eine Referenz 
+zu einem Lock l, sowie eine Liste  ``holdingSet'' aller Locks, welche von der 
+Routine bereits 
+gehalten wurden, als l erfolgreich beansprucht wurde.\\
+Die Datenstruktur beinhaltet die folgenden Variablen:
+\begin{itemize}
+    \item index: Jeder Routine wird ein Index zugewiesen.
+    \item holdingCount: Diese Variable entspricht der Anzahl der momentan von der 
+        Routine gehaltenen Locks
+    \item holdingSet: Dieses Array beinhaltet Referenzen zu allen von dieser 
+        Routinen momentan gehaltenen Locks.
+    \item depCount: Dieser Integer beinhaltet die Anzahl der in dem Lock-Baum 
+        gehaltenen Dependencies, also die Anzahl der Kanten in dem Lock-Baum.
+    \item dependencies: Über dieses Array wird der eigentliche Lock-Baum 
+        gehalten. Er besteht aus einer Liste aller in dem Baum gespeicherten 
+        Dependencies.
+    \item dependencyMap: Dieses Dictionary wird verwendet, um möglichst 
+        effizient abzuschätzen, ob die momentane Situation bereits aufgetreten 
+        ist, z.B. wenn sich das Lock in einer Schleife befindet. Als Werte wird
+        eine Liste mit Referenzen zu Dependencies gespeichert, die bereits 
+        betrachtet worden sind.
+    \item curDep: Diese Variable beinhaltet eine Referenz zu der letzten 
+        eingefügten Dependency.
+    \item collectedSingleLevelLocks: Dieses Dictionary beinhaltet callerInfo für 
+        singel-level Locks.
+\end{itemize}
+Eine Aktualisierung der Datenstruktur ist nur notwendig, wenn ``holdingCount'' 
+größer 0 ist, da es sonst keine neuen Dependencies geben kann. Ist eine 
+Aktualisierung notwendig, so wird zuerst der Schlüssel für ``dependencyMap''
+berechnet, der der aktuellen Situation entspricht. Der Schlüssel berechnet sich 
+über eine xOr Operation zwischen der Speicherposition des momentanen Locks 
+sowie des letzten in ``currentHolding'' eingefügten Locks. Existiert dieser 
+Schlüssel bereits, wird betrachtet, ob eine Dependency mit dem selben Lock
+existiert, bei dem das ``holdingSet'' der Dependency dem momentanen ``holdingSet''
+der Routine entspricht. Wenn diese nicht übereinstimmen, oder der Schlüssel
+nicht gefunden wurde, geht das Programm davon aus, dass die momentan auftretenden
+Dependencies zum ersten mal auftreten. Es wird dementsprechend eine neue
+Dependencies in ``dependencies'' eingefügt, deren Lock aus dem Lock, auf dem die
+Lock-Operation ausgeführt wird entspricht, und deren ``holdingSet'' eine 
+Kopie des ``holdingSet'' der Routine ist. Zudem wird die neue Dependencies
+in die Liste der Dependencies der ``dependencyMap'' hinzugefügt, und ``curDep''
+auf die neu erzeugte Dependency gesetzt. Ist dies der Fall, dann wird eine 
+Variable isNew auf true gesetzt, um zu Signalisieren, dass diese Situation 
+noch nicht bekannt ist.
+Dadurch kann sicher gestellt werden, dass für dieses Lock nicht erneut 
+ein Call-Stack bzw. Caller Informationen gespeichert werden.\\
+Es ist möglich in den Optionen einzustellen, dass Informationen über Lock 
+Vorgänge auf single-level Locks gesammelt werden. Da auf single-level Locks keine
+Dependencies definiert werden, kann nicht über ``depMap'' entschieden werden, 
+ob der Lock-Vorgang schon einmal betrachtet worden ist. Um zu verhindern, dass 
+der entsprechende Call-Stacks bzw. Caller-Informationen mehrfach gespeichert 
+werden, werden Caller-Informationen (Datei und Zeile in denen die Lock Operation 
+ausgeführt wird) in einem Dictionary gespeichert. Bei einem solchen Aufruf wird
+nun überprüft, ob das Lock an der entsprechenden Stelle bereits einmal gelockt 
+wurde. Ist dies der Fall, so wird isNew auf true gesetzt. Andernfalls wird der 
+neue Lock Vorgang in das Dictionary eingefügt.\\
+Wenn isNew auf true gesetzt wurde und entweder der holdingCount größer 0 ist 
+oder die Sammlung von Caller-Informationen für single-Level Locks aktiviert ist,
+wird entweder der ganze CallStack oder lediglich die Datei und Zeilennummer der 
+Lock Operation in der Liste der ``callerInfo'' Objekte in dem Lock eingefügt.
+Anschließend wird das Lock in ``currentHolding'', also die Liste der momentan
+gehaltenen Locks eingefügt und ``holdingCount'' entsprechend angepasst.
+
+
+\subsection{TryLock}\label{Chap::Implementation:Logging.TryLock}
+TryLock versuchen ein Lock zu beanspruchen. Wenn es von keinem anderen Lock 
+gehalten wird, geben sie true zurück und beanspruchen das entsprechende Lock. 
+Ist es nicht möglich, dann geben sie false zurück. Anders als Lock warted das 
+Programm in diesem Fall allerdings nicht, bis das Lock freigegeben wurde, sondern
+führt das Programm weiter aus, ohne das Lock beansprucht zu haben.\\ 
+TryLocks werden für die Detektion nur betrachtet, wenn die Beanspruchung 
+erfolgreich war. In diesem Fall wird das Lock lediglich in ``holdingSet'' 
+eingefügt.
+Es werden allerdings nicht betrachtet, welche Locks bereits von der 
+entsprechenden Routine gehalten werden und somit Dependencies erzeugen 
+würden.
+
+\subsection{UnLock}\label{Chap::Implementation:Logging.UnLock}
+In der Unlock Operation wird das Lock lediglich aus ``holdingSet'' entfernt,
+und ``holdingCount'' entsprechend angepasst. Anschließend wird das entsprechende
+sync.Mutex-Lock freigegeben.
+
+\section{Periodische Detektion} \label{Chap::Implementation:Periodic}
+Die Aufgabe der periodischen Detektion besteht darin, tatsächlich auftretende
+Deadlocks zu erkennen, und das Programm in diesem Fall abzubrechen. Sie wird,
+wie in \ref{Chap::Implementation:Initialisierung} bereits beschrieben in 
+regelmäßigen zeitigen Abständen automatisch gestartet, solange sie nicht 
+über die Optionen deaktiviert wird. Sie wird außerdem nur dann durchgeführt,
+wenn mindestens 2 Routinen laufen.\\
+Der periodische Detektor besitzt ein Array ``lastHolding'', in dem für jede 
+Routine, das Letzte erfolgreich beanspruchte Lock gespeichert wird. Bevor 
+die eigentliche Detektion beginnt, werden die Werte dieser Liste für jede 
+Routine mit den momentanen Werten für das zuletzt erfolgreich beanspruchte 
+Lock verglichen. Gibt es keine Abweichungen, so nimmt der Detektor an, dass sich 
+die situation seit der letzten periodischen Detektion nicht verändert hat, und 
+führt keine erneute Detektion aus. Gibt es hingegen Abweichungen, so wird 
+``lastHolding'' aktualisiert und die eigentliche Detektion gestartet.\\
+Diese läuft nicht auf den Dependencies der eigentlichen Lock-Bäumen ab, 
+sondern nur auf den zuletzt in die 
+Lock-Bäume eingefügten Dependencies ``curDep''. Diese sind zur Erkennung von
+Deadlocks ausreichend, die Betrachtung ist aber effizienter, da ihre Anzahl in 
+der Regel geringer ist, als die Menge aller Dependencies. In diesen ``curDep's''
+wird nun nach Zyklen gesucht, welche auf ein Deadlock hinweisen würden.
+Dazu wird ein Stack verwendet. Zuerst wird das ``curDep'' $c_1$ einer der 
+Routine $r$
+auf den Stack gelegt. Das ganze wird insgesamt für alle Routinen als 
+Startroutine wiederholt. Im nächsten Schritt werden alle Routinen betrachtet,
+deren Index größer ist, als der Index der Routine, dessen ``curDep'' $c_1$ an 
+oberster
+Position im Stapel liegt. Es wird nun überprüft, ob sich mit dem ``curDep''
+ $c_2$ dieser 
+Routinen eine Kette bilden lässt, also ob das Lock von $c_1$ in dem 
+``holdingSet'' von $c_2$ vorkommt. Wird ein solches 
+``curDep'' gefunden, wird überprüft, ob die gebildete Kette einen Zyklus bildet.
+Dies ist genau dann der Fall, wenn das Lock von $c_2$ in dem ``holdingSet''
+der ``curDep'' auftaucht, welche an unterster Position im Stack liegt. Ist 
+die Kette kein Zyklus, dann wird $c_2$ auf den Stapel gelegt und der Suchvorgang
+rekursiv wiederholt, nun aber mit $c_2$ als neuem obersten ``curDep''. Dies wird
+solange fortgesetzt, bis entweder ein Zyklus gefunden wurde, oder alle Routinen 
+betrachtet wurden. Dabei wird darauf geachtet, dass nur Routinen betrachtet 
+werden, deren ``curDep'' noch nicht auf dem Stapel liegen. Wenn ein Zyklus 
+gefunden wurde geht der Detektor davon aus, dass sich das Programm in ein
+Deadlock befindet. Um die Wahrscheinlichkeit von False-Positives zu verringern
+wird nun noch einmal für alle in dem Zyklus auftauchenden Routinen überprüft,
+ob sich das letzte Lock in dem ``holdingSet'' der Routine verändert hat. Ist dies 
+der Fall, dann geht der Detektor von einem falschen Alarm aus. Andernfalls 
+wird eine Fehlermeldung ausgegeben, die auf den Deadlock hinweist und die 
+gesammelten ``callerInfo's'' zu den entsprechenden Locks ausgibt. Anschließend
+wird noch die vollständige Detektion, wie in \ref{Chap::Implementation:Complete}
+beschrieben ausgeführt und das Programm anschließend abgebrochen. 
+
+
+\section{Vollständige Detektion} \label{Chap::Implementation:Complete}
+Die vollständige Detektion wird nach Beendigung des Programms ausgeführt. 
+Die Aufgabe dieses Teils besteht darin, den Lock-Baum, der in der Logging-Phase 
+aufgebaut wurde nach potentiellen Deadlocks zu durchsuchen. Da UNDEAD 
+sowieso nicht in
+der Lage ist Deadlocks zu erkennen, die in nur einer Routine passieren (z.B. 
+double locking), wird der Detektor nur ausgeführt, wenn in dem Programm 
+mindestens zwei Routinen aufgetaucht sind. Außerdem zählt der Detektor, wie 
+viele einzigartige Dependencies es in der Menge aller Lock-Bäume ist. Wenn es 
+weniger als zwei einzigartige Routinen gibt, ist es ausgeschlossen, das 
+der Detektor dort ein potentielles Deadlock findet. In diesem Fall wird die 
+Suche abgebrochen.\\
+Die Suche nach potentiellen Deadlocks läuft nahezu identisch ab wie die 
+periodische Detektion
+in \ref{Chap::Implementation:Periodic}. Allerdings werden hierbei nicht nur 
+die zuletzt eingefügten, sondern alle in dem Lock-Baum enthaltenen Dependencies
+betrachtet. Außerdem wird die Suche nicht bei dem ersten gefundenen Deadlock 
+abgebrochen, sondern fortgeführt bis alle möglichen Pfade betrachtet wurden.
+
+
+\section{Meldung}
+Wird ein tatsächlicher oder potentieller Deadlock gefunden, wird dem Nutzer 
+eine entsprechende Nachricht ausgegeben. Beide Methoden nutzen einen Stack um 
+nach Zyklen zu suchen. Wenn ein solcher Kreis auftritt, sind die Locks, der in 
+dem Stack gerade gehaltenen Dependencies gerade die Locks, die in dem Deadlock
+involviert sind. Da die Caller-Informationen bzw. Stack-Traces direkt in den 
+Locks gespeichert werden, können diese Informationen nun ausgegeben werden,
+um dem Nutzer die Erkennung der (potentiellen) Deadlocks zu ermöglichen. 
+Dabei wird zuerst ein Liste der Initialisierungen der Locks ausgegeben. 
+Anschließend werden nach Locks sortiert die gesammelten Informationen über die 
+Lock-Beanspruchungen ausgegeben.
