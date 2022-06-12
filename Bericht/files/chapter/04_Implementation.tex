@@ -140,7 +140,16 @@ Die Datenstruktur beinhaltet die folgenden Variablen:
         singel-level Locks.
 \end{itemize}
 Eine Aktualisierung der Datenstruktur ist nur notwendig, wenn ``holdingCount'' 
-größer 0 ist, da es sonst keine neuen Dependencies geben kann. Ist eine 
+größer 0 ist, da es sonst keine neuen Dependencies geben kann, oder wenn die 
+Detektion von Double-Locks aktiviert ist. Bei Double-Locks handelt es sich 
+um Locks, die beansprucht werden, während sie von der selben Routine 
+bereits gehalten werden. In diesem Fall wird, bevor die Aktualisierung der 
+Datenstruktur ausgeführt wird überprüft, ob sich das Lock bereits in dem
+``holdingSet'' der entsprechenden Routine befindet. Ist dies der Fall, so wird 
+das Programm mit einer Fehlermeldung abgebrochen. Eine solche Detektion ist in 
+UNDEAD eigentlich nicht 
+vorgesehen, in dieser Implementierung aber möglich, auch wenn sie standardmäßig 
+deaktiviert ist.\\ Ist eine 
 Aktualisierung notwendig, so wird zuerst der Schlüssel für ``dependencyMap''
 berechnet, der der aktuellen Situation entspricht. Der Schlüssel berechnet sich 
 über eine xOr Operation zwischen der Speicherposition des momentanen Locks 
