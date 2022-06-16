@@ -1,7 +1,8 @@
 package main
 
 import (
-	"DeadlockExamples/selfWritten"
+	"DeadlockExamples/otherExamples"
+	"time"
 
 	deadlock "github.com/ErikKassubek/Deadlock-Go"
 )
@@ -9,18 +10,17 @@ import (
 func main() {
 	deadlock.SetDoubleLockingDetection(true)
 
-	// defer deadlock.FindPotentialDeadlocks()
+	defer deadlock.FindPotentialDeadlocks()
 
 	// selfWritten.RunDeadlockGo()
 
-	selfWritten.RunSasha()
+	// selfWritten.RunSasha()
 
-	// otherExamples.RunVfs()
 	// otherExamples.RunCockroach3710()
 	// otherExamples.RunCockroach9935()
 	// otherExamples.RunCockroach6181()
 	// otherExamples.RunCockroach7504()
-	// otherExamples.RunCockroach10214()
+	otherExamples.RunCockroach10214()
 	// otherExamples.RunEtcd5509()
 	// otherExamples.RunEtcd6708()
 	// otherExamples.RunGrpc3017()
@@ -33,5 +33,5 @@ func main() {
 	// otherExamples.RunMoby36114()
 	// otherExamples.RunSyncthing4829()
 
-	// time.Sleep(time.Second)
+	time.Sleep(time.Second)
 }
