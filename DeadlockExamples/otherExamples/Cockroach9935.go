@@ -7,17 +7,18 @@
  * Description: This bug is caused by acquiring l.mu.Lock() twice. The fix is
  * to release l.mu.Lock() before acquiring l.mu.Lock for the second time.
  */
-package cockroach9935
+package otherExamples
 
+/* sasha-s
 import (
 	"errors"
 	"math/rand"
-	"sync"
-	"testing"
+
+	"github.com/sasha-s/go-deadlock"
 )
 
 type loggingT struct {
-	mu sync.Mutex
+	mu deadlock.Mutex
 }
 
 func (l *loggingT) outputLogEntry() {
@@ -37,7 +38,42 @@ func (l *loggingT) exit(err error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 }
-func TestCockroach9935(t *testing.T) {
+func RunCockroach9935() {
 	l := &loggingT{}
+	go l.outputLogEntry()
+}
+*/
+
+/* Deadlock-go */
+import (
+	"errors"
+	deadlock "github.com/ErikKassubek/Deadlock-Go"
+	"math/rand"
+)
+
+type loggingT struct {
+	mu deadlock.Mutex
+}
+
+func (l *loggingT) outputLogEntry() {
+	l.mu.Lock()
+	if err := l.createFile(); err != nil {
+		l.exit(err)
+	}
+	l.mu.Unlock()
+}
+func (l *loggingT) createFile() error {
+	if rand.Intn(8)%4 > 0 {
+		return errors.New("")
+	}
+	return nil
+}
+func (l *loggingT) exit(err error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+}
+func RunCockroach9935() {
+	l := &loggingT{}
+	l.mu = deadlock.NewLock()
 	go l.outputLogEntry()
 }

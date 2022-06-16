@@ -262,5 +262,7 @@ func test_12() {
 }
 
 func main() {
-	test_9()
+	fmt.Println("run")
+	test_7()
+	time.Sleep(time.Second)
 }

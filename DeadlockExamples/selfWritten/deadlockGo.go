@@ -27,8 +27,6 @@ func DeadlockGoPotentialDeadlock(c chan<- bool) {
 	ch := make(chan bool, 2)
 
 	go func() {
-		deadlock.NewRoutine()
-
 		z.Lock()
 		z.Unlock()
 		time.Sleep(time.Second)
@@ -41,8 +39,6 @@ func DeadlockGoPotentialDeadlock(c chan<- bool) {
 	}()
 
 	go func() {
-		deadlock.NewRoutine()
-
 		y.Lock()
 		x.Lock()
 		x.Unlock()
@@ -67,8 +63,6 @@ func DeadlockGoPotentialDeadlockThreeEdgeCirc(c chan<- bool) {
 	ch := make(chan bool, 3)
 
 	go func() {
-		deadlock.NewRoutine()
-
 		x.Lock()
 		y.Lock()
 		y.Unlock()
@@ -78,8 +72,6 @@ func DeadlockGoPotentialDeadlockThreeEdgeCirc(c chan<- bool) {
 	}()
 
 	go func() {
-		deadlock.NewRoutine()
-
 		y.Lock()
 		z.Lock()
 		z.Unlock()
@@ -89,7 +81,6 @@ func DeadlockGoPotentialDeadlockThreeEdgeCirc(c chan<- bool) {
 	}()
 
 	go func() {
-		deadlock.NewRoutine()
 		z.Lock()
 		x.Lock()
 		x.Unlock()
@@ -114,8 +105,6 @@ func DeadlockGoNoPotentialDeadlockGuardLocks(c chan<- bool) {
 	ch := make(chan bool, 2)
 
 	go func() {
-		deadlock.NewRoutine()
-
 		z.Lock()
 		x.Lock()
 		y.Lock()
@@ -128,8 +117,6 @@ func DeadlockGoNoPotentialDeadlockGuardLocks(c chan<- bool) {
 	}()
 
 	go func() {
-		deadlock.NewRoutine()
-
 		z.Lock()
 		y.Lock()
 		x.Lock()
@@ -148,6 +135,37 @@ func DeadlockGoNoPotentialDeadlockGuardLocks(c chan<- bool) {
 
 }
 
+func DeadlockGoNestedRoutines(c chan<- bool) {
+	x := deadlock.NewLock()
+	y := deadlock.NewLock()
+	ch := make(chan bool)
+	ch2 := make(chan bool)
+
+	go func() {
+		x.Lock()
+		go func() {
+			y.Lock()
+			y.Unlock()
+			ch <- true
+		}()
+		<-ch
+		x.Unlock()
+		ch2 <- true
+	}()
+	go func() {
+		y.Lock()
+		x.Lock()
+		x.Unlock()
+		y.Unlock()
+		ch2 <- true
+	}()
+
+	<-ch2
+	<-ch2
+
+	c <- true
+}
+
 // actual deadlock
 func DeadlockGoActualDeadlock(c chan<- bool) {
 	x := deadlock.NewLock()
@@ -157,7 +175,6 @@ func DeadlockGoActualDeadlock(c chan<- bool) {
 	ch2 := make(chan bool)
 
 	go func() {
-		deadlock.NewRoutine()
 		z.Lock()
 		z.Unlock()
 		x.Lock()
@@ -170,7 +187,6 @@ func DeadlockGoActualDeadlock(c chan<- bool) {
 	}()
 
 	go func() {
-		deadlock.NewRoutine()
 		y.Lock()
 		<-ch2
 		x.Lock()
@@ -190,7 +206,6 @@ func DeadlockGoDoubleLogging(c chan<- bool) {
 	ch := make(chan bool, 2)
 	ch2 := make(chan bool)
 	go func() {
-		// deadlock.NewRoutine()
 		x.Lock()
 		x.Lock()
 		ch2 <- true
@@ -199,7 +214,6 @@ func DeadlockGoDoubleLogging(c chan<- bool) {
 	}()
 
 	go func() {
-		deadlock.NewRoutine()
 		<-ch2
 		ch <- true
 	}()
@@ -209,15 +223,18 @@ func DeadlockGoDoubleLogging(c chan<- bool) {
 	c <- true
 }
 
-func RunDeadlockGo(c chan<- bool) {
-	ch := make(chan bool, 4)
-	DeadlockGoPotentialDeadlock(ch)
+func RunDeadlockGo() {
+	ch := make(chan bool, 6)
+	// DeadlockGoPotentialDeadlock(ch)
+	// <-ch
+	// DeadlockGoPotentialDeadlockThreeEdgeCirc(ch)
+	// <-ch
+	// DeadlockGoNoPotentialDeadlockGuardLocks(ch)
+	// <-ch
+	DeadlockGoNestedRoutines(ch)
 	<-ch
-	DeadlockGoPotentialDeadlockThreeEdgeCirc(ch)
-	<-ch
-	DeadlockGoNoPotentialDeadlockGuardLocks(ch)
-	<-ch
-	DeadlockGoDoubleLogging(ch)
-	<-ch
-	c <- true
+	// DeadlockGoDoubleLogging(ch)
+	// <-ch
+	// DeadlockGoActualDeadlock(ch)
+	//<-ch
 }

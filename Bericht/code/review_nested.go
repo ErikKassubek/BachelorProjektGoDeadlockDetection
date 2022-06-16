@@ -1,24 +1,28 @@
-func nestedGoRoutines() {
-	var x deadlock.Mutex
-	var y deadlock.Mutex
+func nestedRoutines() {
+	x := deadlock.NewLock()
+	y := deadlock.NewLock()
 	ch := make(chan bool)
+	ch2 := make(chan bool)
 
 	go func() {
-		y.Lock()
-		// nested routine
+		x.Lock()
 		go func() {
-			x.Lock()
-			x.Unlock()
+			y.Lock()
+			y.Unlock()
 			ch <- true
 		}()
 		<-ch
+		x.Unlock()
+		ch2 <- true
+	}()
+	go func() {
+		y.Lock()
+		x.Lock()
+		x.Unlock()
 		y.Unlock()
+		ch2 <- true
 	}()
 
-	go func() {
-		x.Lock()
-		y.Lock()
-		y.Lock()
-		x.Lock()
-	}()
+	<-ch2
+	<-ch2
 }

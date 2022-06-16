@@ -15,7 +15,6 @@ in the examplesDeadlockGo.go file
 import (
 	"time"
 
-	deadlock "github.com/ErikKassubek/Deadlock-Go"
 	sasha "github.com/sasha-s/go-deadlock"
 )
 
@@ -137,6 +136,39 @@ func SashaNoPotentialDeadlockGuardLocks(c chan<- bool) {
 
 }
 
+// nested routines
+func SashaNestedRoutines(c chan<- bool) {
+	var x sasha.Mutex
+	var y sasha.Mutex
+	ch := make(chan bool)
+	ch2 := make(chan bool, 2)
+
+	go func() {
+		x.Lock()
+		go func() {
+			y.Lock()
+			y.Unlock()
+			ch <- true
+		}()
+		<-ch
+		x.Unlock()
+		ch2 <- true
+	}()
+
+	go func() {
+		y.Lock()
+		x.Lock()
+		x.Unlock()
+		y.Unlock()
+		ch2 <- true
+	}()
+
+	<-ch2
+	<-ch2
+
+	c <- true
+}
+
 // actual deadlock
 func SashaActualDeadlock(c chan<- bool) {
 	var x sasha.Mutex
@@ -177,17 +209,10 @@ func SashaDoubleLogging(c chan<- bool) {
 	ch := make(chan bool, 2)
 	ch2 := make(chan bool)
 	go func() {
-		// deadlock.NewRoutine()
 		x.Lock()
 		x.Lock()
 		ch2 <- true
 		x.Unlock()
-		ch <- true
-	}()
-
-	go func() {
-		deadlock.NewRoutine()
-		<-ch2
 		ch <- true
 	}()
 
@@ -196,15 +221,19 @@ func SashaDoubleLogging(c chan<- bool) {
 	c <- true
 }
 
-func RunSasha(c chan<- bool) {
-	ch := make(chan bool, 3)
+func RunSasha() {
+	ch := make(chan bool, 6)
 	sasha.Opts.OnPotentialDeadlock = func() {}
-	SashaPotentialDeadlock(ch)
+	// SashaPotentialDeadlock(ch)
+	// <-ch
+	// SashaPotentialDeadlockThreeEdgeCirc(ch)
+	// <-ch
+	// SashaNoPotentialDeadlockGuardLocks(ch)
+	// <-ch
+	SashaNestedRoutines(ch)
 	<-ch
-	SashaPotentialDeadlockThreeEdgeCirc(ch)
-	<-ch
-	SashaNoPotentialDeadlockGuardLocks(ch)
-	<-ch
-	SashaDoubleLogging(ch)
-	c <- true
+	// SashaDoubleLogging(ch)
+	// <-ch
+	// SashaActualDeadlock(ch)
+	//<-ch
 }

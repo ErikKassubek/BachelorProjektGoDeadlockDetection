@@ -1,5 +1,6 @@
-package hugo5379
+package otherExamples
 
+/* sasha-s */
 import (
 	"context"
 

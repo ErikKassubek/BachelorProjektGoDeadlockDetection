@@ -16,21 +16,22 @@
  *   A test is added for this bug, and we need to try whether
  * this bug can be reproduced.
  */
-package moby17176
+package otherExamples
 
+/* sasha-s
 import (
 	"errors"
-	"sync"
-	"testing"
 	"time"
+
+	"github.com/sasha-s/go-deadlock"
 )
 
-type DeviceSet struct {
-	sync.Mutex
+type DeviceSet1 struct {
+	deadlock.Mutex
 	nrDeletedDevices int
 }
 
-func (devices *DeviceSet) cleanupDeletedDevices() error {
+func (devices *DeviceSet1) cleanupDeletedDevices() error {
 	devices.Lock()
 	if devices.nrDeletedDevices == 0 {
 		/// Missing devices.Unlock()
@@ -41,7 +42,7 @@ func (devices *DeviceSet) cleanupDeletedDevices() error {
 }
 
 func testDevmapperLockReleasedDeviceDeletion() {
-	ds := &DeviceSet{
+	ds := &DeviceSet1{
 		nrDeletedDevices: 0,
 	}
 	ds.cleanupDeletedDevices()
@@ -57,6 +58,51 @@ func testDevmapperLockReleasedDeviceDeletion() {
 	case <-doneChan:
 	}
 }
-func TestMoby17176(t *testing.T) {
+func RunMoby17176() {
+	testDevmapperLockReleasedDeviceDeletion()
+}
+*/
+
+/* deadlock-go */
+import (
+	"errors"
+	deadlock "github.com/ErikKassubek/Deadlock-Go"
+	"time"
+)
+
+type DeviceSet1 struct {
+	mu               deadlock.Mutex
+	nrDeletedDevices int
+}
+
+func (devices *DeviceSet1) cleanupDeletedDevices() error {
+	devices.mu.Lock()
+	if devices.nrDeletedDevices == 0 {
+		/// Missing devices.Unlock()
+		return nil
+	}
+	devices.mu.Unlock()
+	return errors.New("Error")
+}
+
+func testDevmapperLockReleasedDeviceDeletion() {
+	ds := &DeviceSet1{
+		mu:               deadlock.NewLock(),
+		nrDeletedDevices: 0,
+	}
+	ds.cleanupDeletedDevices()
+	doneChan := make(chan bool)
+	go func() {
+		ds.mu.Lock()
+		defer ds.mu.Unlock()
+		doneChan <- true
+	}()
+
+	select {
+	case <-time.After(time.Millisecond):
+	case <-doneChan:
+	}
+}
+func RunMoby17176() {
 	testDevmapperLockReleasedDeviceDeletion()
 }

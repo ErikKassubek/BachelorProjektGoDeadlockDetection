@@ -2,28 +2,31 @@
 
 \section{Deadlocks} \label{Kap::Theo:Deadlocks}
 
-Ein Deadlock ist ein Zustand in einem nebenläufigen Programm, indem alle 
-laufenden Tread zyklisch auf die Freigabe von Ressourcen warten.\\
+Ein Deadlock ist ein Zustand in einem nebenläufigen Programm, also einem 
+Programm, in denen mehrere Routinen gleichzeitig ausgeführt werden, indem alle 
+laufenden Routinen zyklisch auf die Freigabe von Ressourcen warten.\\
 Im großen und ganzen lassen sich Deadlocks in zwei Gruppen einteilen: 
 Ressourcen-Deadlocks und Kommunikations-Deadlocks \cite{zhou}.
 Im folgenden sollen jedoch nur durch Locks erzeugte Ressourcen-Deadlocks 
 betrachtet werden.\\
-Locks gehören zu den am weitesten verbreiteten Mechanismen um sicher zu stellen,
-dass sich in einem nebenläufigen Programm immer nur ein Thread in einem 
-kritischen Bereich aufhalten kann \cite*{zhou}, bzw.
-dass immer nur maximal ein Tread gleichzeitig auf eine gemeinsame Resource, wie 
-z.B. eine Variable zugreifen kann. Möchte ein Thread $T_1$ nun in einen Bereich 
-eintreten, der durch ein Lock, welches bereits von einem anderen Thread $T_0$ beansprucht wird, geschützt ist, muss es so lange vor dem Lock warten, bis dieses von $T_0$ wieder frei gegeben wird.\\
+Locks gehören zu den am weitesten verbreiteten Mechanismen um kritische 
+Bereiche in einem Programm zu schützen, um also sicher zu stellen,
+dass sich in einem nebenläufigen Programm immer nur maximal eine Routine in einem 
+solchen kritischen Bereich aufhalten kann \cite{zhou}.
+Möchte ein Routine $R_1$ nun in einen Bereich 
+eintreten, der durch ein Lock, welches bereits von einem anderen Thread $R_0$ 
+beansprucht wird, geschützt ist, muss sie so lange vor dem Lock warten, bis dieses 
+von $R_0$ wieder frei gegeben wird.\\
 Ein Deadlock kann nun entstehen, wenn all Treads vor einem solchen Lock warten 
 müssen, wobei die Locks immer von einem anderen Tread gehalten werden. 
-Im folgende bezeichnet $acq_i(l)$, dass das Lock $l$ von Prozess $T_i$ 
-beansprucht und $rel_i(l)$, dass $l$ von $T_i$ wieder freigegeben wird. 
-Man betrachte nun das folgende Beispiel \cite{sulzmann} mit den Treads 
-$T_1$ und $T_2$:
+Im folgende bezeichnet $acq_i(l)$, dass das Lock $l$ von der Routine $R_i$ 
+beansprucht und $rel_i(l)$, dass $l$ von $R_i$ wieder freigegeben wird. 
+Man betrachte nun das folgende Beispiel \cite{sulzmann} mit den Routinen 
+$R_1$ und $R_2$:
 \begin{table}[H]
     \centering
     \begin{tabular}{ccc}
-       & $T_1$        & $T_2$          \\
+       & $R_1$        & $R_2$          \\
     1. & $acq_{1}(y)$ &                \\
     2. & $acq_{1}(x)$ &                \\
     3. & $rel_{1}(x)$ &                \\
@@ -34,11 +37,11 @@ $T_1$ und $T_2$:
     8. &              & $rel_{2}(x)$
     \end{tabular}
 \end{table}
-Da $T_1$ und $T_2$ gleichzeitig ablaufen ist folgender Ablauf möglich:
+Da $R_1$ und $R_2$ gleichzeitig ablaufen ist folgender Ablauf möglich:
 \begin{table}[H]
     \centering
     \begin{tabular}{ccc}
-       & $T_1$          & $T_2$          \\
+       & $R_1$          & $R_2$          \\
     1. & $acq_{1}(y)$ &                \\
     5. &                & $acq_{2}(x)$ \\
     2. & $B-acq_{1}(x)$ &                \\
@@ -46,25 +49,43 @@ Da $T_1$ und $T_2$ gleichzeitig ablaufen ist folgender Ablauf möglich:
     \end{tabular}
 \end{table}
 Dabei impliziert $B-acq_i(l)$, dass $acq_{i}(l)$ nicht ausgeführt werden konnte,
-bzw. dass der Thread $T_i$ vor dem Lock halten muss, da das Lock bereits von 
-einem anderen Tread beansprucht wird. In diesem Beispiel wartet nun $T_1$ 
-darauf, dass das Lock $x$ geöffnet wird und $T_2$ wartet darauf, dass Lock 
-$y$ geöffnet wird. Da nun aller Thread warten müssen, bis ein Lock freigegeben 
-wird, allerdings keiner der Threads weiter laufen kann um ein Lock zu öffnen, 
-kommt es zum Stillstand. Dieser Zustand wird als Deadlock bezeichnet.
+bzw. dass die Routine $R_i$ vor dem Lock halten muss, da das Lock bereits von 
+einer anderen Routine beansprucht wird. In diesem Beispiel wartet nun $R_1$ 
+darauf, dass das Lock $x$ geöffnet wird und $R_2$ wartet darauf, dass Lock 
+$y$ geöffnet wird. Da nun alle Routinen warten müssen, bis ein Lock freigegeben 
+wird, allerdings keine der Routinen weiter laufen kann um ein Lock zu öffnen, 
+kommt es zum Stillstand. Dieser Zustand wird als zyklicher Deadlock bezeichnet.\\
+Eine andere Situation, bei der ein Deadlock entstehen kann tritt auf, wenn 
+eine Routine das selbe Lock mehrfach beansprucht, ohne es zwischendurch wieder 
+frei zu geben. Dies ist sogar möglich, wenn in dem Programm zu diesem Zieitpukt
+nur eine Routine aktiv ist. Ein Beispiel dafür gibt folgendes Programm:
+\begin{table}[H]
+    \centering
+    \begin{tabular}{cc}
+        & $R_1$ \\
+        1. & $acq_{1}(x)$ \\
+        2. & $acq_1(x)$\\
+        3. & $rel_1{x}$
+    \end{tabular}
+\end{table}
+Die Routine muss dabei vor der zweiten Beanspruchung warten,
+ohne dass es es die Möglichkeit gibt, dass die Routine irgendwann weiter laufen wird.
+Solch ein Deadlock wird als doppeltes Locking bezeichnet.\\
 \section{Deadlocks-Detection}
 Deadlocks in Programmen sind Fehler, die oft den vollständige Abbruch eines 
-Programmes zu Folge haben, wenn keine zusätzliche Routine zur Auflösung von 
+Programmes zu Folge haben, wenn keine zusätzliche Logik zur Erkennung und Auflösung von 
 Deadlocks implementiert ist. Aus diesem Grund möchte man bereits bei der 
 Implementierung eines Programmes verhindern, dass ein solcher Deadlock auftreten 
 kann. Unglücklicherweise kann es ohne zusätzliche Hilfsmittel schwierig sein, 
 einen solchen Deadlock zu erkennen, da das Auftreten eines Deadlock von dem 
-genauen Ablauf der verschiedenen Threads abhängt.\\ Um dennoch Deadlocks 
-detektieren zu können, können Lock-Graphen oder Lock-Bäume verwendet werden.
+genauen zeitlichen Ablauf der verschiedenen Routinen abhängt.\\
+Um dennoch Deadlocks 
+erkennen zu können, können Lock-Graphen oder Lock-Bäume verwendet werden, die 
+im folgenden betrachtet werden sollen.
 \subsection{Lock-Graphen}
-Ein Lock-Graph ist ein gerichteter Graph $G = (L, E)$, Dabei ist $L$ die Menge 
-aller Locks $E \subseteq L \times L$ ist definiert als $(l_1, l_2) \in E$ genau 
-dann wenn es einen Tread $T$ gibt, welcher $acq(l_2)$ ausgeführt, während er 
+Ein Lock-Graph ist ein gerichteter Graph $G = (L, E)$. Dabei ist $L$ die Menge 
+aller Locks. $E \subseteq L \times L$ ist definiert als $(l_1, l_2) \in E$ genau 
+dann wenn es eine Routine $R$ gibt, auf welche $acq(l_2)$ ausgeführt wird, während sie 
 bereits das Lock $l_1$ hält \cite{bensalem}. Mathematisch ausgedrückt gilt also 
 \begin{align*}
     (l_1, l_2) \in E \Leftrightarrow \exists t_1, t_3 \not\exists t_2\ ((t_1 < t_2 < t_3) \land aqr(l_1)[t_1] \land rel(l_1)[t_2] \land  aqr(l_2)[t_3])
@@ -72,22 +93,58 @@ bereits das Lock $l_1$ hält \cite{bensalem}. Mathematisch ausgedrückt gilt als
 wobei $aqr(l_1)[t_i]$ bedeutet, dass $aqr(l_1)$ zum Zeitpunkt $t_i$ ausgeführt 
 wird und equivalent für $rel(l_1)[t_i]$.\\
 Ein Deadlock kann nun auftreten wenn es innerhalb dieses Graphen einen Kreis 
-gibt. Um zu verhindern, dass ein false positive dadurch ausgelöst wird, dass 
-alle Kanten in einem solchen Kreis aus dem selben Thread kommen (wodurch kein 
+gibt. Um zu verhindern, dass ein False-Positive dadurch ausgelöst wird, dass 
+alle Kanten in einem solchen Kreis aus der selben Routine kommen (wodurch kein 
 Deadlock entstehen kann), können die Kanten noch zusätzlich mit einem Label 
-versehen werden, welche den Thread identifiziert, durch welchen die Kante in 
+versehen werden, welches die Routine identifiziert, durch welche die Kante in 
 den Graphen eingefügt wurde. Bei dem Testen nach Zyklen muss nun beachtet 
 werden, dass nicht alle Kanten in dem Kreis das selbe Label haben 
-\cite{bensalem}. 
+\cite{bensalem}. Es sei zusätzlich noch gesagt, dass ein Zyklus in einem 
+Lockgraphen nicht immer auf ein potentielles Deadlock hinweist. Ein solcher 
+Fall, bei dem die Detektion von Zyklen zu einer fälschlichen Detektion 
+führt sind sogenannt Guard-Locks. Diese treten z.B. in folgender Situation
+auf:
+\begin{table}[H]
+     \centering
+     \begin{tabular}{ccc}
+        & $R_1$        & $R_2$          \\
+     1. & $acq_{1}(z)$ &                \\
+     2. & $acq_{1}(y)$ &                \\
+     3. & $acq_{1}(x)$ &                \\
+     4. & $rel_{1}(x)$ &                \\
+     5. & $rel_{1}(y)$ &                \\
+     6. & $rel_{1}(z)$ &                \\
+     7. &              & $acq_{2}(z)$ \\
+     8. &              & $acq_{2}(x)$ \\
+     9. &              & $acq_{2}(y)$ \\
+    10. &              & $rel_{2}(y)$ \\
+    11. &              & $rel_{2}(x)$ \\
+    12. &              & $rel_{2}(z)$
+    \end{tabular}
+\end{table}
+In diesem Fall bilden die Locks $x$ und $y$ in dem Lockgraphen einen Zyklus. 
+Allerdings verhindert das Lock $z$, dass in diesem Fall ein tatsächliches 
+Deadlock auftreten kann, da sich immer nur eine der beiden Routinen 
+in dem Bereich mit den Locks $x$ und $y$ aufhalten kann.
 \subsection{Lock-Bäume}
-Anders als bei Lock-Graphen, speichert bei Lock-Bäumen jede Routine seine 
+Anders als bei Lock-Graphen, speichert bei Lock-Bäumen jede Routine  
 seine eigenen Abhängigkeiten. Dies bedeutet, dass der Lock-Baum $b$ der 
-Routine $r$ genau dann die Kanet $x->y$ besitzt, wenn in Routine $r$ das 
-Lock $y$ beansprucht wird, während in $r$ das Lock $x$ bereits gehalten ist.\\
+Routine $R$ genau dann die Kante $x->y$ besitzt, wenn in Routine $R$ das 
+Lock $y$ beansprucht wird, während in das Lock $x$ in $R$ bereits gehalten wird.\\
 Diese Bäume haben mehrere Vorteile gegenüber Lock-Graphen. Da jede Routine seine 
 eigene Datenstruktur hat, wird verhindert, dass es durch 
 gleichzeitigen Zugriff verschiedener Routinen auf die selbe Datenstruktur zu 
-Problemen kommen kann. Zudem muss die Zugehörigkeit der Abhängigkeiten zu 
+Problemen kommet. Zudem muss die Zugehörigkeit der Abhängigkeiten zu 
 verschiedenen Routinen nicht explizit gespeichert werden. Ein weiterer Vorteil 
-besteht darin, dass Guard-Locks bei Lock0-Bäumen, anders alb ein Lock-Graphen
-nicht zu False-Positives kommt.  
+besteht darin, dass Guard-Locks bei Lock-Bäumen, anders als bei Lock-Graphen
+nicht zu False-Positives führen können. 
+
+%\begin{figure}[H]
+%    \lstinputlisting{code/review_working_1.go}
+%\end{figure}
+%\begin{figure}[H]
+%    \lstinputlisting{code/review_rekursive_1.go}
+%\end{figure}
+%\begin{figure}[H]
+%    \lstinputlisting{code/review_guardLock.go}
+%\end{figure}

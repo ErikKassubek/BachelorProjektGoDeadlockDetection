@@ -10,16 +10,17 @@
  * lock is baseInfo.lock.Lock(). It is very likely that this bug
  * can be reproduced.
  */
-package moby4951
+package otherExamples
 
+/* sasha-s
 import (
-	"sync"
-	"testing"
 	"time"
+
+	"github.com/sasha-s/go-deadlock"
 )
 
 type DeviceSet struct {
-	sync.Mutex
+	deadlock.Mutex
 	infos            map[string]*DevInfo
 	nrDeletedDevices int
 }
@@ -56,7 +57,7 @@ func (devices *DeviceSet) removeDeviceAndWait(devname string) {
 }
 
 type DevInfo struct {
-	lock sync.Mutex
+	lock deadlock.Mutex
 	name string
 }
 
@@ -79,7 +80,86 @@ func NewDeviceSet() *DeviceSet {
 	return devices
 }
 
-func TestMoby4951(t *testing.T) {
+func RunMoby4951() {
+
+	ds := NewDeviceSet()
+	/// Delete devices by the same info
+	go ds.DeleteDevice("info1")
+	go ds.DeleteDevice("info1")
+}
+*/
+
+/* deadlock-go */
+import (
+	deadlock "github.com/ErikKassubek/Deadlock-Go"
+	"time"
+)
+
+type DeviceSet struct {
+	mu               deadlock.Mutex
+	infos            map[string]*DevInfo
+	nrDeletedDevices int
+}
+
+func (devices *DeviceSet) DeleteDevice(hash string) {
+	devices.mu.Lock()
+	defer devices.mu.Unlock()
+
+	info := devices.lookupDevice(hash)
+
+	info.lock.Lock()
+	defer info.lock.Unlock()
+
+	devices.deleteDevice(info)
+}
+
+func (devices *DeviceSet) lookupDevice(hash string) *DevInfo {
+	existing, ok := devices.infos[hash]
+	if !ok {
+		return nil
+	}
+	return existing
+}
+
+func (devices *DeviceSet) deleteDevice(info *DevInfo) {
+	devices.removeDeviceAndWait(info.Name())
+}
+
+func (devices *DeviceSet) removeDeviceAndWait(devname string) {
+	/// remove devices by devname
+	devices.mu.Unlock()
+	time.Sleep(300 * time.Nanosecond)
+	devices.mu.Lock()
+}
+
+type DevInfo struct {
+	lock deadlock.Mutex
+	name string
+}
+
+func (info *DevInfo) Name() string {
+	return info.name
+}
+
+func NewDeviceSet() *DeviceSet {
+	devices := &DeviceSet{
+		mu:    deadlock.NewLock(),
+		infos: make(map[string]*DevInfo),
+	}
+	info1 := &DevInfo{
+		lock: deadlock.NewLock(),
+		name: "info1",
+	}
+	info2 := &DevInfo{
+		lock: deadlock.NewLock(),
+		name: "info2",
+	}
+	devices.infos[info1.name] = info1
+	devices.infos[info2.name] = info2
+	return devices
+}
+
+func RunMoby4951() {
 
 	ds := NewDeviceSet()
 	/// Delete devices by the same info

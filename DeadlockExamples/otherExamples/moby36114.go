@@ -9,15 +9,15 @@
  * struct svm has already been locked when calling
  * svm.hotRemoveVHDsAtStart()
  */
-package moby36114
+package otherExamples
 
+/* sasha-s
 import (
-	"sync"
-	"testing"
+	"github.com/sasha-s/go-deadlock"
 )
 
 type serviceVM struct {
-	sync.Mutex
+	deadlock.Mutex
 }
 
 func (svm *serviceVM) hotAddVHDsAtStart() {
@@ -31,7 +31,32 @@ func (svm *serviceVM) hotRemoveVHDsAtStart() {
 	defer svm.Unlock()
 }
 
-func TestMoby36114(t *testing.T) {
+func RunMoby36114() {
 	s := &serviceVM{}
+	go s.hotAddVHDsAtStart()
+}
+*/
+
+/* deadlock-go */
+
+import deadlock "github.com/ErikKassubek/Deadlock-Go"
+
+type serviceVM struct {
+	mu deadlock.Mutex
+}
+
+func (svm *serviceVM) hotAddVHDsAtStart() {
+	svm.mu.Lock()
+	defer svm.mu.Unlock()
+	svm.hotRemoveVHDsAtStart()
+}
+
+func (svm *serviceVM) hotRemoveVHDsAtStart() {
+	svm.mu.Lock() // Double lock here
+	defer svm.mu.Unlock()
+}
+
+func RunMoby36114() {
+	s := &serviceVM{mu: deadlock.NewLock()}
 	go s.hotAddVHDsAtStart()
 }
