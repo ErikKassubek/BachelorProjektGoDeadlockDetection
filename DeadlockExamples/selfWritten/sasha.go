@@ -224,12 +224,12 @@ func SashaDoubleLogging(c chan<- bool) {
 func RunSasha() {
 	ch := make(chan bool, 6)
 	sasha.Opts.OnPotentialDeadlock = func() {}
-	// SashaPotentialDeadlock(ch)
-	// <-ch
-	// SashaPotentialDeadlockThreeEdgeCirc(ch)
-	// <-ch
-	// SashaNoPotentialDeadlockGuardLocks(ch)
-	// <-ch
+	SashaPotentialDeadlock(ch)
+	<-ch
+	SashaPotentialDeadlockThreeEdgeCirc(ch)
+	<-ch
+	SashaNoPotentialDeadlockGuardLocks(ch)
+	<-ch
 	SashaNestedRoutines(ch)
 	<-ch
 	// SashaDoubleLogging(ch)

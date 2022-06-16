@@ -231,10 +231,10 @@ func RunDeadlockGo() {
 	// <-ch
 	// DeadlockGoNoPotentialDeadlockGuardLocks(ch)
 	// <-ch
-	DeadlockGoNestedRoutines(ch)
-	<-ch
-	// DeadlockGoDoubleLogging(ch)
+	// DeadlockGoNestedRoutines(ch)
 	// <-ch
+	DeadlockGoDoubleLogging(ch)
+	<-ch
 	// DeadlockGoActualDeadlock(ch)
 	//<-ch
 }
