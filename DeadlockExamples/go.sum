@@ -1,5 +1,5 @@
-github.com/ErikKassubek/Deadlock-Go v0.0.0-20220616133002-741262317183 h1:CmnVOlKJsxtbKoUkpJJ+rUf1gtkkoZMuCpPM6xk8h04=
-github.com/ErikKassubek/Deadlock-Go v0.0.0-20220616133002-741262317183/go.mod h1:7Vc79JudE6HvOW9XgKRvWHuEXSPs+bKTNR9KslSB/Ck=
+github.com/ErikKassubek/Deadlock-Go v0.0.0-20220627160217-3d1291320dea h1:Z2Ytyjy1VyVK7bK9Rrg4pl5F2m0y0cR4klVMMxVGODM=
+github.com/ErikKassubek/Deadlock-Go v0.0.0-20220627160217-3d1291320dea/go.mod h1:7Vc79JudE6HvOW9XgKRvWHuEXSPs+bKTNR9KslSB/Ck=
 github.com/petermattis/goid v0.0.0-20180202154549-b0b1615b78e5/go.mod h1:jvVRKCrJTQWu0XVbaOlby/2lO20uSCHEMzzplHXte1o=
 github.com/petermattis/goid v0.0.0-20220526132513-07eaf5d0b9f4 h1:COozsq2xbSoZ6kt+/iHGF7eQqiUZr2uxQoAe4OzNkhE=
 github.com/petermattis/goid v0.0.0-20220526132513-07eaf5d0b9f4/go.mod h1:pxMtw7cyUw6B2bRH0ZBANSPg+AoSud1I1iyJHI69jH4=

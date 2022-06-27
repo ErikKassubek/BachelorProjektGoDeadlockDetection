@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	deadlock.SetDoubleLockingDetection(true)
+	// deadlock.SetDoubleLockingDetection(true)
 
 	defer deadlock.FindPotentialDeadlocks()
 
@@ -33,5 +33,6 @@ func main() {
 	// otherExamples.RunMoby36114()
 	// otherExamples.RunSyncthing4829()
 
-	time.Sleep(time.Second)
+	time.Sleep(time.Second * 3)
+
 }
