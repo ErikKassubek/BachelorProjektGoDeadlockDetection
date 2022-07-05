@@ -123,10 +123,10 @@ Diese Funktion ist bezüglich ihres Ablaufs identisch zu der Funktion
 circularLocking in Kapitel~\ref*{Kap::Rev:Cyclic}. Dennoch ist es dem 
 Programm aufgrund der Verschachtelten go-Routine nicht möglich, den möglichen 
 Deadlock zu erkennen. \\
-Ein Fall, bei dem es zu False Positives kommen kann, wird durch Guard-Locks
+Ein Fall, bei dem es zu False Positives kommen kann, wird durch Gate-Locks
 ausgelöst. Wie bereits beschrieben ist ein auf Lock-Graphen basierender Detektor,
 und damit solch ein Detektor nicht in der Lage zu erkennen, wenn ein 
-potentielles Deadlock durch Guard-Locks unmöglich gemacht wird.
+potentielles Deadlock durch Gate-Locks unmöglich gemacht wird.
 
 \section{Go Runtime Deadlock Detection}
 Nebenbei sei noch erwähnt, dass Go einen eigenen Detektor zur Erkennung von Deadlocks

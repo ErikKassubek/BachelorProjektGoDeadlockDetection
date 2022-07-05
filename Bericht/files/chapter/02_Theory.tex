@@ -1,5 +1,9 @@
 \chapter{Theoretischer Hintergrund}
 
+\section{Lock/Mutex}
+\textcolor{red}{What is a Lock/Mutex, war is rw-lock}\\
+Im folgenden werden die Begriffe Lock und Mutex synonym verwendet. 
+
 \section{Deadlocks} \label{Kap::Theo:Deadlocks}
 
 Ein Deadlock ist ein Zustand in einem nebenläufigen Programm, also einem 
@@ -102,7 +106,7 @@ werden, dass nicht alle Kanten in dem Kreis das selbe Label haben
 \cite{bensalem}. Es sei zusätzlich noch gesagt, dass ein Zyklus in einem 
 Lockgraphen nicht immer auf ein potentielles Deadlock hinweist. Ein solcher 
 Fall, bei dem die Detektion von Zyklen zu einer fälschlichen Detektion 
-führt sind sogenannt Guard-Locks. Diese treten z.B. in folgender Situation
+führt sind sogenannt Gate-Locks. Diese treten z.B. in folgender Situation
 auf:
 \begin{table}[H]
      \centering
@@ -126,7 +130,8 @@ In diesem Fall bilden die Locks $x$ und $y$ in dem Lockgraphen einen Zyklus.
 Allerdings verhindert das Lock $z$, dass in diesem Fall ein tatsächliches 
 Deadlock auftreten kann, da sich immer nur eine der beiden Routinen 
 in dem Bereich mit den Locks $x$ und $y$ aufhalten kann.
-\subsection{Lock-Bäume}
+\subsection{Lock-Bäume} \label{Kap::Theo:LockTree}
+\textcolor{red}{umscheiben, wie funktionier detektion}
 Anders als bei Lock-Graphen, speichert bei Lock-Bäumen jede Routine  
 seine eigenen Abhängigkeiten. Dies bedeutet, dass der Lock-Baum $b$ der 
 Routine $R$ genau dann die Kante $x->y$ besitzt, wenn in Routine $R$ das 
@@ -136,8 +141,63 @@ eigene Datenstruktur hat, wird verhindert, dass es durch
 gleichzeitigen Zugriff verschiedener Routinen auf die selbe Datenstruktur zu 
 Problemen kommet. Zudem muss die Zugehörigkeit der Abhängigkeiten zu 
 verschiedenen Routinen nicht explizit gespeichert werden. Ein weiterer Vorteil 
-besteht darin, dass Guard-Locks bei Lock-Bäumen, anders als bei Lock-Graphen
+besteht darin, dass Gate-Locks bei Lock-Bäumen, anders als bei Lock-Graphen
 nicht zu False-Positives führen können. 
+
+
+\textcolor{red}{an anderen text anpassen, hs usw. genauer erklären, dependencies
+erklären}
+Ein Pfad mit $n$
+Elementen ist eine gültige Kette, wenn die folgenden Eigenschaften gelten:
+\begin{align}
+  &\forall i, j \in \{1,...,n\}: \lnot (i = j) \rightarrow \lnot (dep_i = dep_j \lor dep_i.mu = 
+  dep_j.mu) \tag{\ref{Kap::Theo:LockTree}.a}
+  \label{For::Theo:LockTree.a}\\
+  &\forall i \in \{1,...,n\}: mu_i \in hs_{i+1} 
+  \tag{\ref{Kap::Theo:LockTree}.b}
+  \label{For::Theo:LockTree.b}\\
+  &\forall i \in \{1,...,n\}: read(mu_i) \rightarrow 
+  (\forall\ mu \in hs_{i+1}:(mu = mu_i) \to \lnot read(mu))
+  \tag{\ref{Kap::Theo:LockTree}.c}
+  \label{For::Theo:LockTree.c}\\
+  &\forall i, j \in \{1,...,n\}: \lnot (i = j) \rightarrow 
+  (\exists\ l1 \in hs_i\ \exists\ l2 \in hs_j ((l1 = l2) \rightarrow 
+  (read(l1) \land read(l2)))) 
+  \tag{\ref{Kap::Theo:LockTree}.d}
+  \label{For::Theo:LockTree.d}
+\end{align}
+Dabei bezeichnet $mu_i$ den Mutex und $hs_i$ das holdingSet der $i$-ten 
+Dependency in der Kette. $read(mu)$ bedeutet, dass das Locking von $mu$, welches 
+in der Dependency abgebildet ist durch ein R-Lock zustande gekommen ist.\\
+Formel \ref{For::Theo:LockTree.a} stellt sicher, dass die selbe 
+Dependency nicht mehr als ein mal in der Kette auftauchen kann. Formel 
+\ref{For::Theo:LockTree.b} besagt, dass die Dependencies tatsächlich
+eine Kette bilden müssen, dass also der Mutex einer Dependency immer in dem 
+HoldingSet der nächsten Dependency in dem Pfad enthalten sein muss. 
+Auch wenn dies wahr ist, ist dies dennoch keine gültige Kette, wenn sowohl der
+Mutex $mu_i$ als auch der Mutex $mu$ in $hs_{i+1}$, für die $mu = mu_i$ gilt 
+beides Reader-Locks sind. Dass solche Pfade ausgeschlossen werden wird durch 
+Formel \ref{For::Theo:LockTree.c} sichergestellt. Die letzte Formel 
+\ref{For::Theo:LockTree.d} beschäftigt sich mit Gate-Locks. 
+Sie besagt, dass wenn es einen Mutex gibt, 
+der in den HoldingSets zweier verschiedener Dependencies in dem Pfad vor kommt, 
+so müssen beide diese Mutexe Reader-Locks sein. Sind sie es nicht, handelt es 
+sich um Gate-Locks, und der entsprechende Pfad kann somit nicht zu einem 
+Deadlock führen. Wenn diese vier Formeln erfüllt sind, handelt es sich um eine 
+gültige Kette.\\
+Ein potentielles Deadlock ergibt sich nun, wenn diese Kette einen Kreis 
+bildet, wenn als 
+\begin{align}
+  &mu_n \in hs_{1} 
+  \tag{\ref{Kap::Implementation:Periodical}.e}
+  \label{For::Implementation:Periodical.e}\\
+  &read(mu_n) \rightarrow 
+  (\forall\ mu \in hs_{1}: (mu = mu_n) \to \lnot read(mu))
+  \tag{\ref{Kap::Implementation:Periodical}.f}
+  \label{For::Implementation:Periodical.f}
+\end{align}
+gilt.
+
 
 %\begin{figure}[H]
 %    \lstinputlisting{code/review_working_1.go}

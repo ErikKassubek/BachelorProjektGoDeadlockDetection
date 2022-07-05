@@ -226,10 +226,10 @@ func DeadlockGoDoubleLogging(c chan<- bool) {
 func RunDeadlockGo() {
 	deadlock.SetCollectCallStack(true)
 	ch := make(chan bool, 6)
-	// DeadlockGoPotentialDeadlock(ch)
-	// <-ch
-	DeadlockGoPotentialDeadlockThreeEdgeCirc(ch)
+	DeadlockGoPotentialDeadlock(ch)
 	<-ch
+	// DeadlockGoPotentialDeadlockThreeEdgeCirc(ch)
+	// <-ch
 	// DeadlockGoNoPotentialDeadlockGuardLocks(ch)
 	// <-ch
 	// DeadlockGoNestedRoutines(ch)

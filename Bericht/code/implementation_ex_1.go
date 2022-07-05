@@ -1,42 +1,29 @@
-import (
-	deadlock "github.com/ErikKassubek/Deadlock-Go"
-)
+import "github.com/ErikKassubek/Deadlock-Go"
 
-func potentialDeadlock() {
+func main() {
+	defer deadlock.FindPotentialDeadlocks()
 	x := deadlock.NewLock()
 	y := deadlock.NewLock()
+
+	// make sure, that program does not terminates
+	// before all routines have terminated
 	ch := make(chan bool, 2)
 
 	go func() {
-		deadlock.NewRoutine()
-
 		x.Lock()
 		y.Lock()
-		time.Sleep(time.Second)
 		y.Unlock()
 		x.Unlock()
-
 		ch <- true
 	}()
 
 	go func() {
-		deadlock.NewRoutine()
-
 		y.Lock()
 		x.Lock()
-		time.Sleep(time.Second)
 		x.Unlock()
 		y.Unlock()
-
 		ch <- true
 	}()
-
 	<-ch
 	<-ch
-}
-
-func main() {
-	deadlock.Initalize()
-	defer deadlock.FindPotentialDeadlocks()
-	potentialDeadlock()
 }

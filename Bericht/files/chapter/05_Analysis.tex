@@ -10,7 +10,7 @@ Für den Vergleich werden verschiedene Beispiel-Programme betrachtet, die in
 \cite{examples} implementiert sind. Diese bestehen zum einen aus verschiedenen 
 Standartsituationen, wie zyklisches Locking aus zwei oder drei Locks, 
 Double-Locking, Deadlock, die auf 
-Grund von Guardlocks nicht auftreten können und Deadlocks in verschachtelte Routinen. 
+Grund von Gate-Locks nicht auftreten können und Deadlocks in verschachtelte Routinen. 
 Zum anderen werden noch weiter 
 Programme betrachtet, die näher an Programmen sind, die in der tatsächlichen 
 Programmentwicklung auftreten können. Diese werden aus \cite{gobench} übernommen.
@@ -27,7 +27,7 @@ erkannt werden. Sobald diese Zyklen allerdings eine Länge von 3 oder mehr
 erreichen, werden diese durch sasha-s nicht mehr erkannt. Deadlock-go 
 hingegen ist in der Lage auch diese potentiellen Deadlocks zu erkennen.\\
 Auch bei Deadlocks, in denen zwar zyklisches Locking auftritt, welche aber 
-auf Grund von Guardlocks nicht zu einem tatsächlich Deadlock führen können,
+auf Grund von Gate-Locks nicht zu einem tatsächlich Deadlock führen können,
 schneidet deadlock-go besser ab. Da dieses mit Lock-Bäumen und nicht mit 
 Lockgraphen implementiert ist, wird in diesem Fall kein potentielles Deadlock 
 ausgegeben. sasha-s hingegen erkennt nicht, dass solch ein Deadlock nicht 
