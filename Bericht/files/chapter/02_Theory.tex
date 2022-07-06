@@ -1,11 +1,43 @@
 \chapter{Theoretischer Hintergrund}
 
-\section{Lock/Mutex}
-\textcolor{red}{What is a Lock/Mutex, war is rw-lock}\\
-Im folgenden werden die Begriffe Lock und Mutex synonym verwendet. 
+\section{Locks, Mutex}
+Im folgenden werden die Begriffe Lock und Mutex synonym verwendet.\\
+Es gibt Situation in nebenläufigen Programmen, in denen sich verschiedene 
+Routienen nicht gleichzeitig in bestimmten Bereichen aufhalten dürfen.\\
+Locks gehören zu den am weitesten verbreiteten Mechanismen um solche kritische 
+Bereiche in einem Program zu schützen \cite{zhou}.
+Möchte ein Routine $R_1$ nun in einen Bereich 
+eintreten, der durch ein Lock, welches bereits von einer anderen Routine $R_0$ 
+gehalten wird, geschützt ist, muss sie so lange vor dem Lock warten, bis dieses 
+von $R_0$ wieder frei gegeben wird.
+\subsection{Operationen}
+Auf Locks sind in der Regel die drei folgenden Operationen definiert.
+\begin{itemize}
+    \item Lock: Eine Routine $R$ versucht das Lock zu beanspruchen. Wird das Lock 
+        von keiner Routine gehalten, wird das Lock geschlossen, so dass andere 
+        Routinen es nicht schließen können, bis es von $R$ wieder frei gegeben 
+        wird. Ist es nicht möglich das Lock zu beanspruchen, da es bereits von 
+        einer anderen Routine gehalten wird, muss $R$ so lange von der Operation 
+        warten, bis eine Beanspruchung erfolgreich ist.
+    \item TryLock: TryLock unterscheidet sich von Lock dadurch, das die Routine,
+        wenn es nicht möglich ist, das Lock zu beanspruchen nicht vor der 
+        Operation wartet, sondern weiter ausgeführt wird, ohne das Lock geschlossen
+        zu haben. Die Operation gibt außerdem zurück, ob die Beanspruchung 
+        erfolgreich war.
+    \item Unlock: Unlock gibt ein Lock wieder frei. Es kann nur von der Routine 
+        frei gegeben werden, die es geschlossen hat.
+\end{itemize}
+\subsection{RW-Locks}
+Neben den allgemeinen Locks gibt es noch Reader-Writer Locks. Diese haben im 
+Vergleich zu den allgemeinen Locks zwei Lock und TryLock Operation, R-Lock und 
+W-Lock (analog für Try-Lock). W-Lock, im folgenden einfach Lock genant funktioniert 
+identisch zu Lock in den allgemeinen Locks. Bei R-Locks hingegen ist es, anders 
+als bei Lock, dass das Lock gleichzeitig von verschiedenen Routine gehalten wird
+(oder mehrfach von der selben Routine), solange alle diese Beanspruchungen durch 
+R-Lock erfolgt sind. Es ist nicht möglich ein Lock gleichzeitig durch R-Lock und 
+Lock zu schließen.
 
 \section{Deadlocks} \label{Kap::Theo:Deadlocks}
-
 Ein Deadlock ist ein Zustand in einem nebenläufigen Programm, also einem 
 Programm, in denen mehrere Routinen gleichzeitig ausgeführt werden, indem alle 
 laufenden Routinen zyklisch auf die Freigabe von Ressourcen warten.\\
@@ -13,14 +45,6 @@ Im großen und ganzen lassen sich Deadlocks in zwei Gruppen einteilen:
 Ressourcen-Deadlocks und Kommunikations-Deadlocks \cite{zhou}.
 Im folgenden sollen jedoch nur durch Locks erzeugte Ressourcen-Deadlocks 
 betrachtet werden.\\
-Locks gehören zu den am weitesten verbreiteten Mechanismen um kritische 
-Bereiche in einem Programm zu schützen, um also sicher zu stellen,
-dass sich in einem nebenläufigen Programm immer nur maximal eine Routine in einem 
-solchen kritischen Bereich aufhalten kann \cite{zhou}.
-Möchte ein Routine $R_1$ nun in einen Bereich 
-eintreten, der durch ein Lock, welches bereits von einem anderen Thread $R_0$ 
-beansprucht wird, geschützt ist, muss sie so lange vor dem Lock warten, bis dieses 
-von $R_0$ wieder frei gegeben wird.\\
 Ein Deadlock kann nun entstehen, wenn all Treads vor einem solchen Lock warten 
 müssen, wobei die Locks immer von einem anderen Tread gehalten werden. 
 Im folgende bezeichnet $acq_i(l)$, dass das Lock $l$ von der Routine $R_i$ 
@@ -130,23 +154,17 @@ In diesem Fall bilden die Locks $x$ und $y$ in dem Lockgraphen einen Zyklus.
 Allerdings verhindert das Lock $z$, dass in diesem Fall ein tatsächliches 
 Deadlock auftreten kann, da sich immer nur eine der beiden Routinen 
 in dem Bereich mit den Locks $x$ und $y$ aufhalten kann.
+
 \subsection{Lock-Bäume} \label{Kap::Theo:LockTree}
-\textcolor{red}{umscheiben, wie funktionier detektion}
 Anders als bei Lock-Graphen, speichert bei Lock-Bäumen jede Routine  
 seine eigenen Abhängigkeiten. Dies bedeutet, dass der Lock-Baum $b$ der 
-Routine $R$ genau dann die Kante $x->y$ besitzt, wenn in Routine $R$ das 
+Routine $R$ genau dann die Kante $x\to y$ besitzt, wenn in Routine $R$ das 
 Lock $y$ beansprucht wird, während in das Lock $x$ in $R$ bereits gehalten wird.\\
-Diese Bäume haben mehrere Vorteile gegenüber Lock-Graphen. Da jede Routine seine 
-eigene Datenstruktur hat, wird verhindert, dass es durch 
-gleichzeitigen Zugriff verschiedener Routinen auf die selbe Datenstruktur zu 
-Problemen kommet. Zudem muss die Zugehörigkeit der Abhängigkeiten zu 
-verschiedenen Routinen nicht explizit gespeichert werden. Ein weiterer Vorteil 
-besteht darin, dass Gate-Locks bei Lock-Bäumen, anders als bei Lock-Graphen
-nicht zu False-Positives führen können. 
-
-
-\textcolor{red}{an anderen text anpassen, hs usw. genauer erklären, dependencies
-erklären}
+Im folgenden, wird ein Lock-Baum als eine Menge von Dependencies betrachtet. 
+Eine solche Dependency besteht aus einem Lock $mu$ und einer Menge von Locks $hs$,
+von denen $mu$ anhängt, für die es also eine Kante $x \to mu$ mit $x \in hs$ gibt.\\
+Ein potentielles Deadlock liegt nun vor, wenn es in der Menge aller Dependencies
+eine gültige, zyklische Kette gibt.\\
 Ein Pfad mit $n$
 Elementen ist eine gültige Kette, wenn die folgenden Eigenschaften gelten:
 \begin{align}
@@ -196,15 +214,19 @@ bildet, wenn als
   \tag{\ref{Kap::Implementation:Periodical}.f}
   \label{For::Implementation:Periodical.f}
 \end{align}
-gilt.
+gilt.\\\\
+Diese Bäume haben mehrere Vorteile gegenüber Lock-Graphen. Da jede Routine seine 
+eigene Datenstruktur hat, wird verhindert, dass es durch 
+gleichzeitigen Zugriff verschiedener Routinen auf die selbe Datenstruktur zu 
+Problemen kommet. Zudem muss die Zugehörigkeit der Abhängigkeiten zu 
+verschiedenen Routinen nicht explizit gespeichert werden. Ein weiterer Vorteil 
+besteht darin, dass Gate-Locks bei Lock-Bäumen, anders als bei Lock-Graphen
+nicht zu False-Positives führen können.
 
 
-%\begin{figure}[H]
-%    \lstinputlisting{code/review_working_1.go}
-%\end{figure}
-%\begin{figure}[H]
-%    \lstinputlisting{code/review_rekursive_1.go}
-%\end{figure}
-%\begin{figure}[H]
-%    \lstinputlisting{code/review_guardLock.go}
-%\end{figure}
+\subsection{Doppeltes Locking}
+Um doppeltes Locking zu erkennen ist es ausreichend vor der Lock-Operation 
+zu überprüfen, ob das Lock bereits von der selben Routine gehalten wird, ohne 
+dass es sich bei beiden Operationen um Reader-Locks handelt.
+
+
