@@ -12,6 +12,7 @@
 \begin{document}
 \input{files/titlepage.tex}
 % \input{files/abstract.tex}
+\setcounter{tocdepth}{1}
 \tableofcontents
 \input{files/chapter/01_Introduction.tex}
 \newpage
@@ -24,6 +25,11 @@
 \input{files/chapter/05_Analysis.tex}
 \newpage
 
+\begingroup
+\let\clearpage\relax
+\addcontentsline{toc}{chapter}{Quellen}
 \printbibliography[keyword={source}, title={Quellen}]
+\addcontentsline{toc}{chapter}{Referenzen}
 \printbibliography[keyword={reference}, title={Referenzen}]
+\endgroup
 \end{document}

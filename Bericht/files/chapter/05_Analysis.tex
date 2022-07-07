@@ -1,8 +1,9 @@
 \chapter{Analyse von deadlock-go und Vergleich mit 
     go-deadlock (sasha-s)}
-Im Folgenden soll der in \ref{Chap::Implementation} beschriebene und in 
-\cite{implementation} implementierte Detektor analysiert und mit dem in 
-\ref{Chap::Review:go-deadlock} betrachteten Detektor verglichen
+Im Folgenden soll der in \ref{Kap::Implementaion} beschriebene und in 
+\cite{implementation} implementierte Detektor \glqq deadlock-go \grqq analysiert 
+und mit dem in 
+\ref{Chap::Review:go-deadlock} betrachteten Detektor \glqq go-deadlock \grqq verglichen
 werden. Um Verwechslungen zwischen den beiden relativ ähnlichen Namen zu vermeiden,
 wird dieser im folgenden nach dem Besitzer des Git-Hub Repositories als sasha-s
 bezeichnet.\\
@@ -19,8 +20,8 @@ zu erkennen, wurde die Menge der Beispielprogramme auf die Menge der Programme
 mit Resourcen-Deadlocks beschränkt. Da deadlock-go in sein momentanen Zustand 
 keine RWLocks implementiert wurden Programme, dies solche enthalten entsprechend
 angepasst.
-\section{Erkennung von Deadlocks}
-
+\section{Funktionale Analyse}
+\textcolor{red}{nochmal umschreiben, erweitern}
 Man betrachte zuerst die Standartprobleme. Ein potenzielles Deadlock, welches 
 durch das zyklische Locking von zwei Deadlocks auftritt kann durch beide Tools
 erkannt werden. Sobald diese Zyklen allerdings eine Länge von 3 oder mehr 
@@ -77,3 +78,6 @@ sehr guten Job darin machen, potentielle Deadlocks zu erkennen.
 Deadlock-go erkennt in diesen Beispielprogrammen alle potentiellen
 Deadlocks, wärend sasha-s bei zwei der Probleme fälschlicherweise 
 kein Problem findet.
+
+\section{Zeitliche Analyse}
+\textcolor{red}{fehlt noch}
