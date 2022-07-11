@@ -367,7 +367,7 @@ func (f *DeltaFIFO) Pop(process PopProcessFunc) {
 
 func NewFederatedInformer() FederatedInformer {
 	federatedInformer := &federatedInformerImpl{
-		mu: deadlock.NewLock(),
+		mu: *deadlock.NewLock(),
 	}
 	federatedInformer.clusterInformer.controller = NewInformer(
 		ResourceEventHandlerFuncs{
@@ -380,7 +380,7 @@ func NewFederatedInformer() FederatedInformer {
 
 func NewInformer(h ResourceEventHandler) *Controller {
 	fifo := &DeltaFIFO{
-		lock: deadlock.NewLock(),
+		lock: *deadlock.NewLock(),
 	}
 	cfg := &Config{
 		Queue: fifo,

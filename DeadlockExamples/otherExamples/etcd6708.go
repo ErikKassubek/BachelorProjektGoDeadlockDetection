@@ -150,7 +150,7 @@ func NewMembersAPI(c Client1) MembersAPI {
 }
 func RunEtcd6708() {
 	hc := &httpClusterClient{
-		mu:            deadlock.NewLock(),
+		mu:            *deadlock.NewLock(),
 		selectionMode: EndpointSelectionPrioritizeLeader,
 	}
 	hc.Sync(context.Background())

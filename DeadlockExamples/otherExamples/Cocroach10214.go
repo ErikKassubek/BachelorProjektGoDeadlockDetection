@@ -194,19 +194,19 @@ func (r *Replica1) maybeCoalesceHeartbeat() bool {
 
 func RunCockroach10214() {
 	store := &Store1{}
-	store.coalescedMu.mu = deadlock.NewLock()
+	store.coalescedMu.mu = *deadlock.NewLock()
 	responses := &store.coalescedMu.heartbeatResponses
 	*responses = append(*responses, 1, 2)
 	store.mu.replicas = make(map[int]*Replica1)
 
 	rp1 := &Replica1{
-		raftMu: deadlock.NewLock(),
-		mu:     deadlock.NewLock(),
+		raftMu: *deadlock.NewLock(),
+		mu:     *deadlock.NewLock(),
 		store:  store,
 	}
 	rp2 := &Replica1{
-		raftMu: deadlock.NewLock(),
-		mu:     deadlock.NewLock(),
+		raftMu: *deadlock.NewLock(),
+		mu:     *deadlock.NewLock(),
 		store:  store,
 	}
 	store.mu.replicas[0] = rp1

@@ -63,6 +63,6 @@ func (proxy *UDPProxy) Run() {
 	proxy.connTrackLock.Unlock()
 }
 func RunMoby7559() {
-	proxy := &UDPProxy{connTrackLock: deadlock.NewLock()}
+	proxy := &UDPProxy{connTrackLock: *deadlock.NewLock()}
 	go proxy.Run()
 }

@@ -89,7 +89,7 @@ func (le *lessor) Renew() {
 }
 func RunEtcd10492() {
 	le := &lessor{
-		mu:                 deadlock.NewLock(),
+		mu:                 *deadlock.NewLock(),
 		checkpointInterval: 0,
 	}
 	fakerCheckerpointer := func(ctx context.Context) {

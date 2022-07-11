@@ -74,6 +74,6 @@ func (l *loggingT) exit(err error) {
 }
 func RunCockroach9935() {
 	l := &loggingT{}
-	l.mu = deadlock.NewLock()
+	l.mu = *deadlock.NewLock()
 	go l.outputLogEntry()
 }

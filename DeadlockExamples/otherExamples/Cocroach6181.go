@@ -24,20 +24,20 @@ func initTestDescriptorDB() *testDescriptorDB {
 }
 
 type rangeDescriptorCache struct {
-	rangeCacheMu deadlock.Mutex
+	rangeCacheMu deadlock.RWMutex
 }
 
 func (rdc *rangeDescriptorCache) LookupRangeDescriptor() {
-	rdc.rangeCacheMu.Lock()
+	rdc.rangeCacheMu.RLock()
 	fmt.Printf("lookup range descriptor: %s", rdc)
-	rdc.rangeCacheMu.Unlock()
+	rdc.rangeCacheMu.RUnlock()
 	rdc.rangeCacheMu.Lock()
 	rdc.rangeCacheMu.Unlock()
 }
 
 func (rdc *rangeDescriptorCache) String() string {
-	rdc.rangeCacheMu.Lock()
-	defer rdc.rangeCacheMu.Unlock()
+	rdc.rangeCacheMu.RLock()
+	defer rdc.rangeCacheMu.RUnlock()
 	return rdc.stringLocked()
 }
 
@@ -100,7 +100,7 @@ type testDescriptorDB struct {
 }
 
 func initTestDescriptorDB() *testDescriptorDB {
-	return &testDescriptorDB{&rangeDescriptorCache{rangeCacheMu: deadlock.NewLock()}}
+	return &testDescriptorDB{&rangeDescriptorCache{rangeCacheMu: *deadlock.NewLock()}}
 }
 
 type rangeDescriptorCache struct {

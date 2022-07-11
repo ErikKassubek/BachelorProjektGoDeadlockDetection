@@ -143,15 +143,15 @@ func (info *DevInfo) Name() string {
 
 func NewDeviceSet() *DeviceSet {
 	devices := &DeviceSet{
-		mu:    deadlock.NewLock(),
+		mu:    *deadlock.NewLock(),
 		infos: make(map[string]*DevInfo),
 	}
 	info1 := &DevInfo{
-		lock: deadlock.NewLock(),
+		lock: *deadlock.NewLock(),
 		name: "info1",
 	}
 	info2 := &DevInfo{
-		lock: deadlock.NewLock(),
+		lock: *deadlock.NewLock(),
 		name: "info2",
 	}
 	devices.infos[info1.name] = info1

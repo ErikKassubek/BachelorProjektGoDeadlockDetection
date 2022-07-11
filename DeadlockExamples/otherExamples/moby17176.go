@@ -87,7 +87,7 @@ func (devices *DeviceSet1) cleanupDeletedDevices() error {
 
 func testDevmapperLockReleasedDeviceDeletion() {
 	ds := &DeviceSet1{
-		mu:               deadlock.NewLock(),
+		mu:               *deadlock.NewLock(),
 		nrDeletedDevices: 0,
 	}
 	ds.cleanupDeletedDevices()

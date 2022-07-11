@@ -168,8 +168,7 @@ eine gültige, zyklische Kette gibt.\\
 Ein Pfad mit $n$
 Elementen ist eine gültige Kette, wenn die folgenden Eigenschaften gelten:
 \begin{align}
-  &\forall i, j \in \{1,...,n\}: \lnot (i = j) \rightarrow \lnot (dep_i = dep_j \lor dep_i.mu = 
-  dep_j.mu) \tag{\ref{Kap::Theo:LockTree}.a}
+  &\forall i, j \in \{1,...,n\}: \lnot (i = j) \rightarrow \lnot (dep_i = dep_j) \tag{\ref{Kap::Theo:LockTree}.a}
   \label{For::Theo:LockTree.a}\\
   &\forall i \in \{1,...,n\}: mu_i \in hs_{i+1} 
   \tag{\ref{Kap::Theo:LockTree}.b}

@@ -1,6 +1,6 @@
 package otherExamples
 
-/* sasha-s */
+/* sasha-s
 import (
 	"context"
 	"fmt"
@@ -103,8 +103,9 @@ func RunEtcd5509() {
 
 	<-donec
 }
+*/
 
-/* deadlock-go
+/* deadlock-go */
 import (
 	"context"
 	"fmt"
@@ -184,13 +185,13 @@ type KV interface {
 func NewKV(c *Client) KV {
 	return &kv{rc: &remoteClient{
 		client: c,
-		mu:     deadlock.NewLock(),
+		mu:     *deadlock.NewLock(),
 	}}
 }
 func RunEtcd5509() {
 	ctx, cancel := context.WithCancel(context.TODO())
 	cli := &Client{
-		mu:     deadlock.NewLock(),
+		mu:     *deadlock.NewLock(),
 		ctx:    ctx,
 		cancel: cancel,
 	}
@@ -208,4 +209,3 @@ func RunEtcd5509() {
 
 	<-donec
 }
-*/

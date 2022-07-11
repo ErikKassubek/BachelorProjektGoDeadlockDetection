@@ -19,8 +19,12 @@ import (
 	deadlock "github.com/ErikKassubek/Deadlock-Go"
 )
 
-// simple example for potential deadlock
-func DeadlockGoPotentialDeadlock(c chan<- bool) {
+// ========== Mutex ============
+
+// ------Lock-------
+
+// 1. simple example for potential deadlock with two routines
+func DeadlockGoPotentialDeadlock() {
 	x := deadlock.NewLock()
 	y := deadlock.NewLock()
 	z := deadlock.NewLock()
@@ -49,13 +53,10 @@ func DeadlockGoPotentialDeadlock(c chan<- bool) {
 
 	<-ch
 	<-ch
-
-	c <- true
-
 }
 
-// test with 3 edge loop
-func DeadlockGoPotentialDeadlockThreeEdgeCirc(c chan<- bool) {
+// 2. test with 3 edge loop
+func DeadlockGoPotentialDeadlockThreeEdgeCirc() {
 	x := deadlock.NewLock()
 	y := deadlock.NewLock()
 	z := deadlock.NewLock()
@@ -93,12 +94,10 @@ func DeadlockGoPotentialDeadlockThreeEdgeCirc(c chan<- bool) {
 	<-ch
 	<-ch
 
-	c <- true
-
 }
 
-// no deadlock because of guard locks
-func DeadlockGoNoPotentialDeadlockGuardLocks(c chan<- bool) {
+// 3. no deadlock because of Gate locks
+func DeadlockGoNoPotentialDeadlockGateLocks() {
 	x := deadlock.NewLock()
 	y := deadlock.NewLock()
 	z := deadlock.NewLock()
@@ -130,12 +129,10 @@ func DeadlockGoNoPotentialDeadlockGuardLocks(c chan<- bool) {
 
 	<-ch
 	<-ch
-
-	c <- true
-
 }
 
-func DeadlockGoNestedRoutines(c chan<- bool) {
+// 4. deadlock with nested go routines
+func DeadlockGoNestedRoutines() {
 	x := deadlock.NewLock()
 	y := deadlock.NewLock()
 	ch := make(chan bool)
@@ -163,20 +160,38 @@ func DeadlockGoNestedRoutines(c chan<- bool) {
 	<-ch2
 	<-ch2
 
-	c <- true
 }
 
-// actual deadlock
-func DeadlockGoActualDeadlock(c chan<- bool) {
+// 5. double locking
+func DeadlockGoDoubleLogging() {
+	x := deadlock.NewLock()
+	ch := make(chan bool, 2)
+	ch2 := make(chan bool)
+	go func() {
+		x.Lock()
+		x.Lock()
+		ch2 <- true
+		x.Unlock()
+		ch <- true
+	}()
+
+	go func() {
+		<-ch2
+		ch <- true
+	}()
+
+	<-ch
+	<-ch
+}
+
+// 6.1 actual deadlock with two routines
+func DeadlockGoActualDeadlock() {
 	x := deadlock.NewLock()
 	y := deadlock.NewLock()
-	z := deadlock.NewLock()
 	ch := make(chan bool, 2)
 	ch2 := make(chan bool)
 
 	go func() {
-		z.Lock()
-		z.Unlock()
 		x.Lock()
 		time.Sleep(time.Second)
 		ch2 <- true
@@ -197,45 +212,183 @@ func DeadlockGoActualDeadlock(c chan<- bool) {
 
 	<-ch
 	<-ch
-
-	c <- true
 }
 
-func DeadlockGoDoubleLogging(c chan<- bool) {
+// 6.2 actual deadlock with tree routines
+func DeadlockGoActualDeadlockThree() {
 	x := deadlock.NewLock()
-	ch := make(chan bool, 2)
+	y := deadlock.NewLock()
+	z := deadlock.NewLock()
+
+	ch := make(chan bool, 3)
 	ch2 := make(chan bool)
+	ch3 := make(chan bool)
+	ch4 := make(chan bool)
+	ch5 := make(chan bool)
+
 	go func() {
 		x.Lock()
-		x.Lock()
 		ch2 <- true
+		<-ch4
+		y.Lock()
+		y.Unlock()
 		x.Unlock()
 		ch <- true
 	}()
 
 	go func() {
 		<-ch2
+		y.Lock()
+		ch3 <- true
+		ch4 <- true
+		<-ch5
+		z.Lock()
+		x.Unlock()
+		y.Unlock()
+		ch <- true
+	}()
+
+	go func() {
+		<-ch3
+		z.Lock()
+		ch5 <- true
+		x.Lock()
+		x.Unlock()
+		y.Unlock()
 		ch <- true
 	}()
 
 	<-ch
 	<-ch
-	c <- true
+	<-ch
+}
+
+// -------------- trylock --------------
+
+// 7. double locking including trylock
+func DoubleLockingIncludingTryLock() {
+	x := deadlock.NewLock()
+	x.TryLock()
+	x.Lock()
+}
+
+// 8. deadlock including tryLock
+func DeadlockIncludingTryLock() {
+	x := deadlock.NewLock()
+	y := deadlock.NewLock()
+
+	ch := make(chan bool, 2)
+
+	go func() {
+		time.Sleep(time.Second) // remove for actual deadlock
+		a := x.TryLock()
+		y.Lock()
+		y.Unlock()
+		if a {
+			x.Unlock()
+		}
+		ch <- true
+	}()
+
+	go func() {
+		a := y.TryLock()
+		x.Lock()
+		if a {
+			y.Unlock()
+		}
+		x.Unlock()
+		ch <- true
+	}()
+
+	<-ch
+	<-ch
+}
+
+// =========== RW-Lock ==========
+
+// 9. can be used to test all combinations or RLock and  Lock
+func DeadlockRwDeadlock() {
+	x := deadlock.NewRWLock()
+	y := deadlock.NewRWLock()
+
+	ch := make(chan bool, 2)
+
+	go func() {
+		x.RLock()
+		y.RLock()
+		y.RUnlock()
+		x.RUnlock()
+
+		ch <- true
+	}()
+
+	go func() {
+		y.RLock()
+		x.RLock()
+		x.RUnlock()
+		y.RUnlock()
+
+		ch <- true
+	}()
+
+	<-ch
+	<-ch
+}
+
+// 10. Can be used to check RW-Locks as gate locks (both Lock and R-Lock)
+func DeadlockGateLocksRW() {
+	x := deadlock.NewRWLock()
+	y := deadlock.NewRWLock()
+	z := deadlock.NewRWLock()
+	ch := make(chan bool, 2)
+
+	go func() {
+		z.RLock()
+		x.Lock()
+		y.Lock()
+		y.Unlock()
+		x.Unlock()
+		z.RUnlock()
+
+		ch <- true
+	}()
+
+	go func() {
+		z.RLock()
+		y.Lock()
+		x.Lock()
+		x.Unlock()
+		y.Unlock()
+		z.RUnlock()
+
+		ch <- true
+	}()
+
+	<-ch
+	<-ch
+
+}
+
+// 11. Double Locking with rwLocks
+func DeadlockRWDoubleLogging() {
+	x := deadlock.NewRWLock()
+	x.RLock()
+	x.RLock()
+	x.RUnlock()
+	x.RUnlock()
 }
 
 func RunDeadlockGo() {
-	deadlock.SetCollectCallStack(true)
-	ch := make(chan bool, 6)
-	DeadlockGoPotentialDeadlock(ch)
-	<-ch
-	// DeadlockGoPotentialDeadlockThreeEdgeCirc(ch)
-	// <-ch
-	// DeadlockGoNoPotentialDeadlockGuardLocks(ch)
-	// <-ch
-	// DeadlockGoNestedRoutines(ch)
-	// <-ch
-	// DeadlockGoDoubleLogging(ch)
-	// <-ch
-	// DeadlockGoActualDeadlock(ch)
-	//<-ch
+	// DeadlockGoPotentialDeadlock()
+	// DeadlockGoPotentialDeadlockThreeEdgeCirc()
+	// DeadlockGoNoPotentialDeadlockGateLocks()
+	// DeadlockGoNestedRoutines()
+	// DeadlockGoDoubleLogging()
+	// DeadlockGoActualDeadlock()
+	// DeadlockGoActualDeadlockThree()
+	DoubleLockingIncludingTryLock()
+	// DeadlockIncludingTryLock()
+	// DeadlockRwDeadlock()
+	// DeadlockGateLocksRW()
+	// DeadlockRWDoubleLogging()
 }

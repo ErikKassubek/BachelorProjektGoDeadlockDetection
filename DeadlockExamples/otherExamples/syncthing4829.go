@@ -112,7 +112,7 @@ type Service struct {
 
 func (s *Service) NewMapping() *Mapping {
 	mapping := &Mapping{
-		mut:          deadlock.NewLock(),
+		mut:          *deadlock.NewLock(),
 		extAddresses: make(map[string]Address1),
 	}
 	s.mut.Lock()

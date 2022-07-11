@@ -283,10 +283,10 @@ func (w *WatchCache) Replace(obj interface{}) {
 
 func NewCacher() *Cacher {
 	watchCache := &WatchCache{
-		mu: deadlock.NewLock(),
+		mu: *deadlock.NewLock(),
 	}
 	cacher := &Cacher{
-		mu:          deadlock.NewLock(),
+		mu:          *deadlock.NewLock(),
 		initialized: sync.WaitGroup{},
 		watchCache:  watchCache,
 		reflector:   NewReflector(watchCache),

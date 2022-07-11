@@ -80,7 +80,7 @@ func (g *Gossip) manage() {
 }
 func RunCockroach584() {
 	g := &Gossip{
-		mu:     deadlock.NewLock(),
+		mu:     *deadlock.NewLock(),
 		closed: true,
 	}
 	go func() {

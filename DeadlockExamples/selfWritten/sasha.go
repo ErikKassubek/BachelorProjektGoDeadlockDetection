@@ -18,8 +18,12 @@ import (
 	sasha "github.com/sasha-s/go-deadlock"
 )
 
-// simple example for potential deadlock
-func SashaPotentialDeadlock(c chan<- bool) {
+// =========== Mutex ===========
+
+// --------- Lock ---------
+
+// 1. simple example for potential deadlock
+func SashaPotentialDeadlock() {
 	var x sasha.Mutex
 	var y sasha.Mutex
 	var z sasha.Mutex
@@ -49,12 +53,10 @@ func SashaPotentialDeadlock(c chan<- bool) {
 	<-ch
 	<-ch
 
-	c <- true
-
 }
 
-// test with 3 edge loop
-func SashaPotentialDeadlockThreeEdgeCirc(c chan<- bool) {
+// 2. test with 3 edge loop
+func SashaPotentialDeadlockThreeEdgeCirc() {
 	var x sasha.Mutex
 	var y sasha.Mutex
 	var z sasha.Mutex
@@ -94,12 +96,10 @@ func SashaPotentialDeadlockThreeEdgeCirc(c chan<- bool) {
 	<-ch
 	<-ch
 
-	c <- true
-
 }
 
-// no deadlock because of guard locks
-func SashaNoPotentialDeadlockGuardLocks(c chan<- bool) {
+// 3. no deadlock because of gate locks
+func SashaNoPotentialDeadlockGateLocks() {
 	var x sasha.Mutex
 	var y sasha.Mutex
 	var z sasha.Mutex
@@ -131,13 +131,10 @@ func SashaNoPotentialDeadlockGuardLocks(c chan<- bool) {
 
 	<-ch
 	<-ch
-
-	c <- true
-
 }
 
-// nested routines
-func SashaNestedRoutines(c chan<- bool) {
+// 4. nested routines
+func SashaNestedRoutines() {
 	var x sasha.Mutex
 	var y sasha.Mutex
 	ch := make(chan bool)
@@ -165,21 +162,33 @@ func SashaNestedRoutines(c chan<- bool) {
 
 	<-ch2
 	<-ch2
-
-	c <- true
 }
 
-// actual deadlock
-func SashaActualDeadlock(c chan<- bool) {
+// 5. double locking
+func SashaDoubleLogging() {
+	var x sasha.Mutex
+	ch := make(chan bool, 2)
+	ch2 := make(chan bool)
+	go func() {
+		x.Lock()
+		x.Lock()
+		ch2 <- true
+		x.Unlock()
+		ch <- true
+	}()
+
+	<-ch
+	<-ch
+}
+
+// 6.1 actual deadlock with two routines
+func SashaActualDeadlock() {
 	var x sasha.Mutex
 	var y sasha.Mutex
-	var z sasha.Mutex
 	ch := make(chan bool, 2)
 	ch2 := make(chan bool)
 
 	go func() {
-		z.Lock()
-		z.Unlock()
 		x.Lock()
 		time.Sleep(time.Second)
 		ch2 <- true
@@ -200,40 +209,145 @@ func SashaActualDeadlock(c chan<- bool) {
 
 	<-ch
 	<-ch
-
-	c <- true
 }
 
-func SashaDoubleLogging(c chan<- bool) {
+// 6.2 actual deadlock with tree routines
+func SashaGoActualDeadlockThree() {
 	var x sasha.Mutex
-	ch := make(chan bool, 2)
+	var y sasha.Mutex
+	var z sasha.Mutex
+
+	ch := make(chan bool, 3)
 	ch2 := make(chan bool)
+	ch3 := make(chan bool)
+	ch4 := make(chan bool)
+	ch5 := make(chan bool)
+
 	go func() {
 		x.Lock()
-		x.Lock()
 		ch2 <- true
+		<-ch4
+		y.Lock()
+		y.Unlock()
 		x.Unlock()
+		ch <- true
+	}()
+
+	go func() {
+		<-ch2
+		y.Lock()
+		ch3 <- true
+		ch4 <- true
+		<-ch5
+		z.Lock()
+		x.Unlock()
+		y.Unlock()
+		ch <- true
+	}()
+
+	go func() {
+		<-ch3
+		z.Lock()
+		ch5 <- true
+		x.Lock()
+		x.Unlock()
+		y.Unlock()
 		ch <- true
 	}()
 
 	<-ch
 	<-ch
-	c <- true
+	<-ch
+}
+
+// go-deadlock has no try-locks. Therefor there are no implementations
+// for 7, 8
+
+// ======== RW-Locks ========
+// 9 can be used to test all combinations or RLock and  Lock
+func SashaRwDeadlock() {
+	var x sasha.RWMutex
+	var y sasha.RWMutex
+
+	ch := make(chan bool, 2)
+	ch2 := make(chan bool)
+
+	go func() {
+		x.RLock()
+		y.RLock()
+		ch2 <- true
+		y.RUnlock()
+		x.RUnlock()
+
+		ch <- true
+	}()
+
+	go func() {
+		<-ch2
+		y.RLock()
+		x.RLock()
+		x.RUnlock()
+		y.RUnlock()
+
+		ch <- true
+	}()
+
+	<-ch
+	<-ch
+}
+
+// 10. Can be used to check RW-Locks as gate locks (both Lock and R-Lock)
+func SashaGateLocksRW() {
+	var x sasha.RWMutex
+	var y sasha.RWMutex
+	var z sasha.RWMutex
+	ch := make(chan bool, 2)
+
+	go func() {
+		z.RLock()
+		x.Lock()
+		y.Lock()
+		y.Unlock()
+		x.Unlock()
+		z.RUnlock()
+
+		ch <- true
+	}()
+
+	go func() {
+		z.RLock()
+		y.Lock()
+		x.Lock()
+		x.Unlock()
+		y.Unlock()
+		z.RUnlock()
+
+		ch <- true
+	}()
+
+	<-ch
+	<-ch
+
+}
+
+// 11. Double Locking with rw-Locks
+func SashaRWDoubleLogging() {
+	var x sasha.RWMutex
+	x.RLock()
+	x.RLock()
+	x.RUnlock()
+	x.RUnlock()
 }
 
 func RunSasha() {
-	ch := make(chan bool, 6)
-	sasha.Opts.OnPotentialDeadlock = func() {}
-	SashaPotentialDeadlock(ch)
-	<-ch
-	SashaPotentialDeadlockThreeEdgeCirc(ch)
-	<-ch
-	SashaNoPotentialDeadlockGuardLocks(ch)
-	<-ch
-	SashaNestedRoutines(ch)
-	<-ch
-	// SashaDoubleLogging(ch)
-	// <-ch
-	// SashaActualDeadlock(ch)
-	//<-ch
+	// SashaPotentialDeadlock()
+	// SashaPotentialDeadlockThreeEdgeCirc()
+	// SashaNoPotentialDeadlockGateLocks()
+	// SashaNestedRoutines()
+	// SashaDoubleLogging()
+	// SashaActualDeadlock()
+	// SashaGoActualDeadlockThree()
+	// SashaRwDeadlock()
+	// SashaGateLocksRW()
+	SashaRWDoubleLogging()
 }

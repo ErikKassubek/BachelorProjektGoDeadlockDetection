@@ -299,7 +299,7 @@ func (m *LeaseManager) Release(lease *LeaseState) {
 }
 func NewLeaseManager(tname *tableNameCache, ts *tableState) *LeaseManager {
 	mgr := &LeaseManager{
-		mu:         deadlock.NewLock(),
+		mu:         *deadlock.NewLock(),
 		tableNames: tname,
 		tables:     make(map[int]*tableState),
 	}
@@ -320,16 +320,16 @@ func RunCockroach7504() {
 	lset := NewLeaseSet(leaseNum)
 
 	nc := &tableNameCache{
-		mu:     deadlock.NewLock(),
+		mu:     *deadlock.NewLock(),
 		tables: make(map[int]*LeaseState),
 	}
 	for i := 0; i < leaseNum; i++ {
 		nc.tables[i] = lset.find(i)
-		nc.tables[i].mu = deadlock.NewLock()
+		nc.tables[i].mu = *deadlock.NewLock()
 	}
 
 	ts := &tableState{
-		mu:             deadlock.NewLock(),
+		mu:             *deadlock.NewLock(),
 		tableNameCache: nc,
 		active:         lset,
 	}

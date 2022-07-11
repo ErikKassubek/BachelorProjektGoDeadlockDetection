@@ -57,6 +57,6 @@ func (svm *serviceVM) hotRemoveVHDsAtStart() {
 }
 
 func RunMoby36114() {
-	s := &serviceVM{mu: deadlock.NewLock()}
+	s := &serviceVM{mu: *deadlock.NewLock()}
 	go s.hotAddVHDsAtStart()
 }
