@@ -26,13 +26,11 @@ import (
 func SashaPotentialDeadlock() {
 	var x sasha.Mutex
 	var y sasha.Mutex
-	var z sasha.Mutex
 	ch := make(chan bool, 2)
+	ch2 := make(chan bool)
 
 	go func() {
-		z.Lock()
-		z.Unlock()
-		time.Sleep(time.Second)
+		<-ch2
 		x.Lock()
 		y.Lock()
 		y.Unlock()
@@ -44,6 +42,7 @@ func SashaPotentialDeadlock() {
 	go func() {
 		y.Lock()
 		x.Lock()
+		ch2 <- true
 		x.Unlock()
 		y.Unlock()
 
@@ -62,11 +61,13 @@ func SashaPotentialDeadlockThreeEdgeCirc() {
 	var z sasha.Mutex
 
 	ch := make(chan bool, 3)
+	ch2 := make(chan bool)
+	ch3 := make(chan bool)
 
 	go func() {
-
 		x.Lock()
 		y.Lock()
+		ch2 <- true
 		y.Unlock()
 		x.Unlock()
 
@@ -74,9 +75,10 @@ func SashaPotentialDeadlockThreeEdgeCirc() {
 	}()
 
 	go func() {
-
+		<-ch2
 		y.Lock()
 		z.Lock()
+		ch3 <- true
 		z.Unlock()
 		y.Unlock()
 
@@ -84,6 +86,7 @@ func SashaPotentialDeadlockThreeEdgeCirc() {
 	}()
 
 	go func() {
+		<-ch3
 		z.Lock()
 		x.Lock()
 		x.Unlock()
@@ -139,6 +142,7 @@ func SashaNestedRoutines() {
 	var y sasha.Mutex
 	ch := make(chan bool)
 	ch2 := make(chan bool, 2)
+	ch3 := make(chan bool) // prevents actual deadlock
 
 	go func() {
 		x.Lock()
@@ -149,10 +153,12 @@ func SashaNestedRoutines() {
 		}()
 		<-ch
 		x.Unlock()
+		ch3 <- true
 		ch2 <- true
 	}()
 
 	go func() {
+		<-ch3
 		y.Lock()
 		x.Lock()
 		x.Unlock()
@@ -270,7 +276,7 @@ func SashaRwDeadlock() {
 	var y sasha.RWMutex
 
 	ch := make(chan bool, 2)
-	ch2 := make(chan bool)
+	ch2 := make(chan bool) // prevent actual deadlock
 
 	go func() {
 		x.RLock()
@@ -302,11 +308,13 @@ func SashaGateLocksRW() {
 	var y sasha.RWMutex
 	var z sasha.RWMutex
 	ch := make(chan bool, 2)
+	ch2 := make(chan bool) // prevent actual deadlock
 
 	go func() {
 		z.RLock()
 		x.Lock()
 		y.Lock()
+		ch2 <- true
 		y.Unlock()
 		x.Unlock()
 		z.RUnlock()
@@ -315,6 +323,7 @@ func SashaGateLocksRW() {
 	}()
 
 	go func() {
+		<-ch2
 		z.RLock()
 		y.Lock()
 		x.Lock()
@@ -340,14 +349,17 @@ func SashaRWDoubleLogging() {
 }
 
 func RunSasha() {
-	// SashaPotentialDeadlock()
-	// SashaPotentialDeadlockThreeEdgeCirc()
-	// SashaNoPotentialDeadlockGateLocks()
-	// SashaNestedRoutines()
-	// SashaDoubleLogging()
-	// SashaActualDeadlock()
-	// SashaGoActualDeadlockThree()
-	// SashaRwDeadlock()
-	// SashaGateLocksRW()
-	SashaRWDoubleLogging()
+	sasha.Opts.OnPotentialDeadlock = func() {} // for timing analysis
+	for i := 0; i < 1000; i++ {
+		// SashaPotentialDeadlock()
+		// SashaPotentialDeadlockThreeEdgeCirc()
+		// SashaNoPotentialDeadlockGateLocks()
+		// SashaNestedRoutines()
+		// SashaDoubleLogging()
+		// SashaActualDeadlock()
+		// SashaGoActualDeadlockThree()
+		SashaRwDeadlock()
+		// SashaGateLocksRW()
+		// SashaRWDoubleLogging()
+	}
 }

@@ -3,7 +3,7 @@ module DeadlockExamples
 go 1.18
 
 require (
-	github.com/ErikKassubek/Deadlock-Go v0.0.0-20220710143553-d6712a9807cf
+	github.com/ErikKassubek/Deadlock-Go v0.0.0-20220713104201-0712e404a8a6
 	github.com/sasha-s/go-deadlock v0.3.1
 )
 

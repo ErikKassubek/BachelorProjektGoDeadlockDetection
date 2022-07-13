@@ -13,7 +13,6 @@ as in the examplesSasha.go file
 */
 
 import (
-	"math/rand"
 	"time"
 
 	deadlock "github.com/ErikKassubek/Deadlock-Go"
@@ -27,15 +26,13 @@ import (
 func DeadlockGoPotentialDeadlock() {
 	x := deadlock.NewLock()
 	y := deadlock.NewLock()
-	z := deadlock.NewLock()
 	ch := make(chan bool, 2)
+	ch2 := make(chan bool)
 
 	go func() {
-		z.Lock()
-		z.Unlock()
-		time.Sleep(time.Second)
-		x.Lock()
+		<-ch2
 		y.Lock()
+		x.Lock()
 		y.Unlock()
 		x.Unlock()
 
@@ -43,8 +40,9 @@ func DeadlockGoPotentialDeadlock() {
 	}()
 
 	go func() {
-		y.Lock()
 		x.Lock()
+		y.Lock()
+		ch2 <- true
 		x.Unlock()
 		y.Unlock()
 
@@ -62,10 +60,13 @@ func DeadlockGoPotentialDeadlockThreeEdgeCirc() {
 	z := deadlock.NewLock()
 
 	ch := make(chan bool, 3)
+	ch2 := make(chan bool)
+	ch3 := make(chan bool)
 
 	go func() {
 		x.Lock()
 		y.Lock()
+		ch2 <- true
 		y.Unlock()
 		x.Unlock()
 
@@ -73,8 +74,10 @@ func DeadlockGoPotentialDeadlockThreeEdgeCirc() {
 	}()
 
 	go func() {
+		<-ch2
 		y.Lock()
 		z.Lock()
+		ch3 <- true
 		z.Unlock()
 		y.Unlock()
 
@@ -82,6 +85,7 @@ func DeadlockGoPotentialDeadlockThreeEdgeCirc() {
 	}()
 
 	go func() {
+		<-ch3
 		z.Lock()
 		x.Lock()
 		x.Unlock()
@@ -107,7 +111,6 @@ func DeadlockGoNoPotentialDeadlockGateLocks() {
 		z.Lock()
 		x.Lock()
 		y.Lock()
-		time.Sleep(time.Second * time.Duration(rand.Float64()))
 		y.Unlock()
 		x.Unlock()
 		z.Unlock()
@@ -119,7 +122,6 @@ func DeadlockGoNoPotentialDeadlockGateLocks() {
 		z.Lock()
 		y.Lock()
 		x.Lock()
-		time.Sleep(time.Second * time.Duration(rand.Float64()))
 		x.Unlock()
 		y.Unlock()
 		z.Unlock()
@@ -137,6 +139,7 @@ func DeadlockGoNestedRoutines() {
 	y := deadlock.NewLock()
 	ch := make(chan bool)
 	ch2 := make(chan bool)
+	ch3 := make(chan bool)
 
 	go func() {
 		x.Lock()
@@ -147,9 +150,11 @@ func DeadlockGoNestedRoutines() {
 		}()
 		<-ch
 		x.Unlock()
+		ch3 <- true
 		ch2 <- true
 	}()
 	go func() {
+		<-ch3
 		y.Lock()
 		x.Lock()
 		x.Unlock()
@@ -266,7 +271,7 @@ func DeadlockGoActualDeadlockThree() {
 // -------------- trylock --------------
 
 // 7. double locking including trylock
-func DoubleLockingIncludingTryLock() {
+func DeadlockDoubleLockingIncludingTryLock() {
 	x := deadlock.NewLock()
 	x.TryLock()
 	x.Lock()
@@ -312,17 +317,20 @@ func DeadlockRwDeadlock() {
 	y := deadlock.NewRWLock()
 
 	ch := make(chan bool, 2)
+	ch2 := make(chan bool)
 
 	go func() {
-		x.RLock()
+		x.Lock()
 		y.RLock()
+		ch2 <- true
 		y.RUnlock()
-		x.RUnlock()
+		x.Unlock()
 
 		ch <- true
 	}()
 
 	go func() {
+		<-ch2
 		y.RLock()
 		x.RLock()
 		x.RUnlock()
@@ -341,11 +349,13 @@ func DeadlockGateLocksRW() {
 	y := deadlock.NewRWLock()
 	z := deadlock.NewRWLock()
 	ch := make(chan bool, 2)
+	ch2 := make(chan bool) // prevent actual deadlock
 
 	go func() {
 		z.RLock()
 		x.Lock()
 		y.Lock()
+		ch2 <- true
 		y.Unlock()
 		x.Unlock()
 		z.RUnlock()
@@ -354,6 +364,7 @@ func DeadlockGateLocksRW() {
 	}()
 
 	go func() {
+		<-ch2
 		z.RLock()
 		y.Lock()
 		x.Lock()
@@ -379,16 +390,18 @@ func DeadlockRWDoubleLogging() {
 }
 
 func RunDeadlockGo() {
-	// DeadlockGoPotentialDeadlock()
-	// DeadlockGoPotentialDeadlockThreeEdgeCirc()
-	// DeadlockGoNoPotentialDeadlockGateLocks()
-	// DeadlockGoNestedRoutines()
-	// DeadlockGoDoubleLogging()
-	// DeadlockGoActualDeadlock()
-	// DeadlockGoActualDeadlockThree()
-	DoubleLockingIncludingTryLock()
-	// DeadlockIncludingTryLock()
-	// DeadlockRwDeadlock()
-	// DeadlockGateLocksRW()
-	// DeadlockRWDoubleLogging()
+	for i := 0; i < 1000; i++ {
+		// DeadlockGoPotentialDeadlock()
+		// DeadlockGoPotentialDeadlockThreeEdgeCirc()
+		// DeadlockGoNoPotentialDeadlockGateLocks()
+		// DeadlockGoNestedRoutines()
+		// DeadlockGoDoubleLogging()
+		// DeadlockGoActualDeadlock()
+		// DeadlockGoActualDeadlockThree()
+		// DeadlockDoubleLockingIncludingTryLock()
+		// DeadlockIncludingTryLock()
+		// DeadlockRwDeadlock()
+		DeadlockGateLocksRW()
+		// DeadlockRWDoubleLogging()
+	}
 }

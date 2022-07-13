@@ -1,1 +1,31 @@
 \chapter{Einführung}
+Deadlocks sind häufig die Ursache, wenn ein Programm nicht mehr reagiert\cite{Joshi}.
+Deadlocks entstehen, wenn sich mehrere Routinen in einem nebenläufigen 
+Programm zyklisch blockieren. Locks, welche zu den häufigsten elementaren 
+Methoden zur Synchronisierung in nebenläufigen Programmen gehöre, können 
+leicht zu solchen Situationen führen \cite{zhou}. Dabei warten mehrere Routinen 
+zyklisch auf die Freigabe eines oder mehrerer Locks, ohne dass die Möglichkeit
+besteht, dass eines der Locks freigegeben wird. Eine weiter Situation, 
+bei denen es zu Deadlocks kommen kann besteht darin, dass eine Routine 
+ein Lock beansprucht, während es das selbe Lock bereits hält.\\ 
+Neben solchen Ressourcen-Deadlock gibt es noch weitere Möglichkeiten Deadlocks 
+zu erzeugen, z.B. Kommunikations-Deadlocks, die im folgenden aber nicht betrachtet 
+werden sollen. \\
+Da Deadlocks häufig nur in sehr bestimmten Fällen auftreten, kann es passieren,
+dass solche Situationen während der Entwicklung eines Programms nicht bemerkt
+werden. Dies führt dazu, dass in einer Stichprobe in vier open-source Anwendungen 
+(MySql, Apache, Mozilla und OpenOffice) etwa $30\%$ aller Concurrency-Probleme 
+auf Deadlocks zurückzuführen waren \cite{Lu}. Ein Programm, bzw. eine Implementierung 
+von Locks, die solche Situationen erkennen kann, kann daher sehr hilfreich sein.
+Auf solche Programme soll im folgenden näher eingegangen werden. Dabei werden 
+dynamische Programme betrachtet, also Programm, die während der Laufzeit des 
+eigentlichen Programs nach Deadlocks suchen. Diese speichern Abhängigkeiten 
+zwischen Lock-Operationen in Lock-Graphen oder Lock-Bäumen, und versuchen aus 
+diesen auf Deadlocks zu schließen.\\\\
+Nach einem Überblick über die Theorie wird ein vorhandener Detektor \cite{sasha-s}
+betrachtet und seine Funktionsweise analysiert. Anschließend wird ein eigener 
+Detektor für Deadlocks, teilweise basierend auf dem UNDEAD Detector \cite{zhou}
+für die Programmiersprache Go entwickelt und implementiert. Die Implementierung des Detectors 
+findet sich in \cite{implementation}. Der Detektor implementiert sowohl normale 
+Locks, als auch RW-Locks mit Lock, TryLock und Unlock Operationen. Im Anschluss 
+werden die beiden Detektoren analysiert und verglichen. 
