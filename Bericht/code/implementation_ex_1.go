@@ -1,11 +1,10 @@
 import "github.com/ErikKassubek/Deadlock-Go"
 
 func main() {
-	defer deadlock.FindPotentialDeadlocks()
 	x := deadlock.NewLock()
 	y := deadlock.NewLock()
 
-	// make sure, that program does not terminates
+	// make sure, that the program does not terminate
 	// before all routines have terminated
 	ch := make(chan bool, 2)
 
@@ -26,4 +25,7 @@ func main() {
 	}()
 	<-ch
 	<-ch
+
+	// start the final deadlock detection
+	deadlock.FindPotentialDeadlocks()
 }

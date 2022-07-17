@@ -3,25 +3,25 @@
 Im folgenden soll eine Software zur Erkennung von Deadlocks analysiert werden.
 Dazu wird die Software ``sasha-s/go-deadlock`` \cite{sasha-s}, veröffentlicht 
 auf Github, betrachtet.\\
-Dieses verwendet Drop-In Replacements für die, in go standardmäßig 
+Dieses verwendet Drop-In Replacements für die, in Go standardmäßig 
 implementierten, sync.Mutex Locks. Diese führen sowohl das eigentliche 
 Locking aus und können, beim Durchlaufen des Programms Situationen erkennen, 
-die zu einem Deadlock führen können. Dabei werden sowohl ein allgemeines Lock 
-als auch Readers–writer-locks implementiert. Dies wirkt sich allerdings nur auf
+die zu einem Deadlock führen können. Dabei werden sowohl Locks
+als auch RW-Locks implementiert. Dies wirkt sich allerdings nur auf
 die Anwendung des eigentlichen Lockings aus, nicht aber auf die Detection von 
 Deadlocks. Aus diesem Grund wird hierauf im folgenden nicht weiter eingegangen, 
 und die Methoden für die Detection von Deadlocks bezieht sich sowohl auf die
-allgemeinen als auch die Readers–writer Locks.\\
+allgemeinen als auch die RW-Locks.\\
 Für die Erkennung werden drei verschiedene Fälle betrachtet:
 \begin{itemize}
-    \item Rekursives Locking
+    \item Doppeltes Locking
     \item Zyklisches Locking
     \item Timeout
 \end{itemize}
 Diese sollen im folgenden genauer betrachtet werden.
 
-\subsection{Rekursives Locking}\label{Kap::Rev:Recursive}
-Um rekursives Locking zu erkennen speichert das Programm ein Dictionary $cur$ mit 
+\subsection{Doppeltes Locking}\label{Kap::Rev:Recursive}
+Um doppeltes Locking zu erkennen speichert das Programm ein Dictionary $cur$ mit 
 allen momentan gehaltenen 
 Locks. Die Werte zu den jeweiligen Keys speichern sowohl, von welcher Go-Routine das 
 Lock momentan gehalten wird, als auch in welcher Datei und Zeile der Befehl,
@@ -29,8 +29,8 @@ der das Locking dieses Locks zu folge hatte, zu finden ist. Wird ein Lock
 wieder freigegeben, so wird der entsprechende Eintrag aus $cur$ entfernt. 
 Wird nun ein Lock neu beansprucht, überprüft 
 das Programm, ob dieses Lock mit der Routine, die das Lock beanspruchen möchte 
-bereits in $curl$ auftaucht. Ist dies der Fall, dann nimmt das
-Programm an, dass es sich hierbei um ein mögliches Deadlock durch rekursives Locking
+bereits in $cur$ auftaucht. Ist dies der Fall, dann nimmt das
+Programm an, dass es sich hierbei um ein mögliches Deadlock durch doppeltes Locking
 handelt und führt 
 entsprechende Schritte aus, um den Nutzer zu warnen. Wird ein Lock wieder frei
 gegeben, wird der entsprechende Eintrag aus $cur$ entfernt.
@@ -92,7 +92,7 @@ Im folgenden Beispiel wird dies deutlich:
     \lstinputlisting{code/review_timeout_falsePositive.go}
 \end{figure}
 Der Chanel finished wird lediglich verwendet um zu verhindern, dass das Programm 
-beendet wird, bevor die gol Routinen durchlaufen wurden. Er ist für die Deadlock
+beendet wird, bevor die Go-Routinen durchlaufen wurden. Er ist für die Deadlock
 Analyse also irrelevant. Das Programm startet zwei go-Routinen, die beide das 
 selbe Lock $x$ verwenden. Durch den time.Sleep(2 * time.Second) command wird 
 sichergestellt, dass die erste go Routine zuerst auf das Lock zugreift. 
@@ -108,10 +108,8 @@ Bei False Negatives oder False Positives handelt es sich um Fälle, bei denen es
 zu einem Deadlock kommen kann, ohne dass dieser Detektiert wird, bzw. Fälle die
 nicht zu einem 
 Deadlock führen können, aber dennoch als Deadlock angezeigt werden. 
-Neben den in den vorherigen Abschnitten gezeigten Fällen, kann es auch in weiteren 
-Fällen zu solchem Verhalten kommen.\\
 Neben den oben bereits genannten Fällen, kann dies noch in weiteren Situationen
-auftreten.
+auftreten.\\
 Ein Fall,
 bei dem ein Deadlock auftreten könnte, welcher von dem Programm aber nicht erkannt
 wird (False Negative), entsteht bei verschachtelten Routinen. Dabei erzeugt eine go-Routine eine 
@@ -128,12 +126,15 @@ ausgelöst. Wie bereits beschrieben ist ein auf Lock-Graphen basierender Detekto
 und damit solch ein Detektor nicht in der Lage zu erkennen, wenn ein 
 potentielles Deadlock durch Gate-Locks unmöglich gemacht wird.
 
-\section{Go Runtime Deadlock Detection}
+\section{Go Runtime Deadlock Detection}\label{Kap::Review:GRDD}
 Nebenbei sei noch erwähnt, dass Go einen eigenen Detektor zur Erkennung von Deadlocks
 besitzt. Allerdings kann 
 dieser, im Unterschied zu dem in~\ref{Chap::Review:go-deadlock} betrachteten 
 Detector nur tatsächlich auftretende Deadlocks erkennen. Eine Erkennung ob 
 in dem Code ein Deadlock möglich ist findet hierbei nicht statt. Um zu erkennen,
-ob ein Deadlock vorliegt zählt go die nicht blockierten Go-Routinen.
+ob ein Deadlock vorliegt zählt Go die nicht blockierten Go-Routinen.
 Fällt dieser Wert auf $0$, nimmt Go an, dass es zu einem Deadlock gekommen 
-ist und bricht das Programm mit einer Fehlermeldung ab~\cite{grdd_code}.
+ist und bricht das Programm mit einer Fehlermeldung ab~\cite{grdd_code}. Die 
+Detektion erkennt auch nur Deadlocks, wenn sie alle Routinen betreffen. 
+Wenn es Routinen gibt, die sich zyklisch blockieren, andere Routinen aber 
+nicht blockiert sind wird solch eine Situation nicht erkannt.

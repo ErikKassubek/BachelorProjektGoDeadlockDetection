@@ -1,5 +1,6 @@
 \chapter{Implementierung des Deadlock-Detektors \glqq Deadlock-Go \grqq} \label{Kap::Implementaion}
-Im folgenden soll die Funktionsweise und Implementierung von Deadlock-Go 
+Im folgenden soll die Funktionsweise und Implementierung eines selbst implementierten 
+Detektors $\glqq$Deadlock-Go$\grqq$ 
 betrachtet werden. Dieser wurde entwickelt um Ressourcen-Deadlocks in Go-Programmen
 zu erkennen und den Nutzer vor solchen zu warnen. Der Code kann in 
 \cite{implementation} gefunden werden.\\
@@ -8,11 +9,11 @@ Zusätzlich wurde er um RW-Locks sowie eine Detektion von doppeltem Locking
 erweitert, welche in UNDEAD nicht betrachtet werden.\\
 Der Detektor implementiert dabei Lock-Bäume, mit welchen zyklisches Locking 
 erkannt werden kann. Neben den Informationen, die für die Erkennung solcher 
-Zyklen benötigt werden, werden außerdem Information darüber, wo in dem Programm-
-Code die Initialisierung sowie die (Try-)(R-)Lock Operationen aufgerufen werden 
-gespeichert. Diese werden dem Nutzer bereitgestellt, wenn ein potentielles 
-Deadlock erkannt wurde, um das Auffinden und Korrigieren des entsprechenden Codes
-zu erleichtern.\\
+Zyklen benötigt werden, werden außerdem Information darüber gespeichert, wo in dem 
+Programm-Code die Initialisierung sowie die (Try-)(R-)Lock Operationen aufgerufen werden. 
+Diese werden dem Nutzer bereitgestellt, wenn ein potentielles 
+Deadlock erkannt wurde, um das Auffinden und Korrigieren des entsprechenden Deadlocks 
+im Programmcode zu erleichtern.\\
 Das folgende Program ist ein Beispiel zur Verwendung des Detektors:
 \begin{figure}[H]
   \lstinputlisting{code/implementation_ex_1.go}
@@ -23,23 +24,22 @@ Es erzeugt den folgenden Output:
 \begin{mdframed}[leftmargin=10pt,rightmargin=10pt]
 \textcolor{red}{POTENTIAL DEADLOCK}\\\\
 \textcolor{purple}{Initialization of locks involved in potential deadlock:}\\\\
-$/$home$/***/$undead$\_$test.go 5\\
-$/$home$/***/$undead$\_$test.go 6\\\\
+$/$home$/***/$undead$\_$test.go 4\\
+$/$home$/***/$undead$\_$test.go 5\\\\
 \textcolor{purple}{Calls of locks involved in potential deadlock:}\\\\
-\textcolor{blue}{Calls for locks created at $/$home$/***/$undead$\_$test.go 5}\\
-$/$home$/***/$undead$\_$test.go 22\\
-$/$home$/***/$undead$\_$test.go 13\\\\
-\textcolor{blue}{Calls for locks created at $/$home$/***/$undead$\_$test.go 6}\\
+\textcolor{blue}{Calls for locks created at $/$home$/***/$undead$\_$test.go 4}\\
 $/$home$/***/$undead$\_$test.go 21\\
-$/$home$/***/$undead$\_$test.go 14\
+$/$home$/***/$undead$\_$test.go 12\\\\
+\textcolor{blue}{Calls for locks created at $/$home$/***/$undead$\_$test.go 5}\\
+$/$home$/***/$undead$\_$test.go 20\\
+$/$home$/***/$undead$\_$test.go 13\
 \end{mdframed}
 
-In diesem, sowie in allen folgenden Beispielen, wurden die Pfade durch $***$ 
+In diesem, sowie in allen folgenden Beispielen, wurden die Pfade durch $/***/$ 
 gekürzt. In der tatsächlichen
 Ausgabe wird der vollständige Pfad angegeben.\\ 
 Der genaue Output hängt von dem tatsächlichen Ablaufs ab, der aufgrund der 
 Nebenläufigkeit bei verschiedenen Durchläufen unterschiedlich sein kann.\\\\
-
 Das restliche Kapitel ist in die folgenden Abschnitte eingeteilt:
 \begin{itemize}
   \item Aufbau der Datenstrukturen
@@ -55,10 +55,10 @@ werden. Wie diese genau verwendet werde, wird in späteren Abschnitten noch
 genauer betrachtet.
 \subsection{(RW-)Mutex}
 Die Strukturen für die (RW-)Mutexe sind so implementiert, dass sie als 
-Drop-In-Replacements für die klassischen sync.(RW)Mutex verwendet werden.
+Drop-In-Replacements für die klassischen sync.(RW)Mutexe verwendet werden.
 Dabei gibt es eine Struktur für Mutexe und eine für RW-Mutexe, die über ein 
 zusätzliches Interface MutexInt zusammengefasst werden können.\\
-Die Mutex Strukturen beinhalten alle Informationen, die für diese benötigt werden.
+Die Mutex-Strukturen beinhalten alle Informationen, die für diese benötigt werden.
 Dabei handelt es sich um die folgenden Informationen:
 \begin{itemize}[leftmargin=1.3em]
   \item mu (*sync.(RW)Mutex) ist das eigentliche Lock, welches für das tatsächliche Locking 
@@ -72,10 +72,10 @@ Dabei handelt es sich um die folgenden Informationen:
     Call-Stack für die entsprechenden Operationen gespeichert werden. 
   \item in (bool) ist ein Marker welcher speichert, ob der Mutex richtig 
       initialisiert wurde. Es ist nicht mögliche ein Mutex einfach durch 
-      $var x Mutex$ oder $var x RWMutex$ zu erzeugen und sofort zu verwenden, 
+      $var\ x\ Mutex$ oder $var\ x\ RWMutex$ zu erzeugen und sofort zu verwenden, 
       sondern die Mutex Variable muss über $x := NewLock()$ bzw. 
       $x := NewRWLock()$ initialisiert werden. Wird eine Lock-Operation o.ä. 
-      auf einem (RW-)Mutex ausgeführt, ohne dass dieses entsprechend initialisiert
+      auf einem\\(RW-)Mutex ausgeführt, ohne dass dieses entsprechend initialisiert
       wurde, wird das Programm mit einem Fehler abgebrochen.
   \item numberLocked (int) speichert, wie oft das Lock im 
       moment gleichzeitig beansprucht ist. Ist das Lock frei, ist dieser Wert $0$.
@@ -89,7 +89,11 @@ Dabei handelt es sich um die folgenden Informationen:
     Dies wird für die Erkennung von doppeltem Locking verwendet.
   \item memoryPosition (uintptr) speichert die Speicheradresse des 
     Mutex Objekts bei seiner Erzeugung.
+  \item isRLock (map[int]bool) (nur für RW-Mutex) speicher, von welcher Routine 
+    der Mutex als RLock gehalten wird.
 \end{itemize}
+Zusätzlich enthalten die (RW)-Locks noch Locks, die bei der gleichzeitigen Verwendung 
+des Locks durch R-Lock eine gleichzeitiges schreiben in maps verhindern.   
 \subsection{Dependencies}
 Dependencies werden verwendet, um die Abhängigkeiten der verschiedenen Mutexe 
 untereinander zu speichern. Sie entsprechen dabei einer Menge an Kanten in einem 
@@ -111,10 +115,10 @@ sich vor allem um eine Liste der Mutexe, die momentan von der Routine
 gehalten werden, sowie die Inforationen, die für den Aufbau des Lock-Baums 
 benötigt werden. Es handelt sich dabei um die folgenden Informationen:
 \begin{itemize}
-  \item index (int) ist der Index der Routine in routines
-  \item holdingCount (int) speichert die Anzahl der im Moment gehaltenen Locks
-  \item holdingSet ([]MutexInt) ist eine Liste, welche Referenzen zu den 
-    momentan von der Routine gehaltenen Locks.
+  \item index (int) ist der Index der Routine in routines.
+  \item holdingCount (int) speichert die Anzahl der im Moment gehaltenen Locks.
+  \item holdingSet ([]MutexInt) ist eine Liste, welche die
+    momentan von der Routine gehaltenen Locks enthält.
   \item dependencyMap (map[uintptr]*[]*dependency) ist ein Dictionary, welches 
    verwendet wird, um zu verhindern, dass wenn die selbe Situation im Code 
    mehrfach auftritt (z.B. durch Schleifen) die entsprechenden Dependencies 
@@ -131,29 +135,34 @@ benötigt werden. Es handelt sich dabei um die folgenden Informationen:
    bereits bekannt sind mehrfach gespeichert werden. 
 \end{itemize}
 \section{(R)-Lock, (R)-TryLock, (R)-Unlock}
-Bei jeder Operation, welche auf den Locks ausgeführt wird, werden die Datenstrukturen,
-wie sie in \ref{Kap::Implementation:Datastructures} beschrieben wurden verändert
-oder neu erzeugt, um auf diesen eine Detektion von Deadlocks zu ermöglichen.\\
+Im folgenden sollen die Implementierungen der verschiedenen, auf den Mutexen
+implementierten Operationen beschrieben werden.\\\\ 
+Sind alle Teile des Detektors deaktiviert, werden nur die entsprechenden 
+Operationen auf den sync.(RW)Mutex Locks ausgeführt. Eine weiter Sammlung von Daten
+findet in diesem Fall nicht statt.\\\\
+Ist der Detektor nicht vollständig deaktiviert, werden bei den verschiedenen 
+Operationen Daten gesammelt, um die Detektion von Deadlocks zu ermöglichen.  
+Bei dieser Sammlung werden die Datenstrukturen,
+welche in \ref{Kap::Implementation:Datastructures} beschrieben wurden, verändert
+oder neu erzeugt.\\
 Diese Vorgänge sollen im folgenden beschrieben werden.
 \subsection{(R)-Lock}
 Das Locking von RW-Mutexes unterscheidet sich von dem Locking der Mutexe nur
-dadurch, das isRead in dem Mutex entsprechend gesetzt wird, und das das 
+dadurch, das isRLock in dem Mutex entsprechend gesetzt wird, und das das 
 Locking des eigentlichen sync.(RW)Locks entsprechend angepasst wird. Die 
 Sammlung der Informationen, welche für die Detektion der Deadlocks benötigt
 wird ist die selbe.\\\\
 Zuerst wird überprüft, ob das Lock sowie der Detektor bereits initialisiert 
 wurde. Ist der Mutex nicht über $NewLock()$ initialisiert worden, wird das 
 Programm mit einer Fehlermeldung abgebrochen. \\
-Anschließend wird das eigentliche Locking des sync.Mutex über ein defer 
-statement vorbereitet. Dabei wird darauf geachtet, ob es sich um ein RWMutex
+Anschließend wird das eigentliche Locking des sync.Mutex über ein defer-Sstatement
+vorbereitet. Dabei wird darauf geachtet, ob es sich um ein RWMutex
 oder ein Mutex handelt, und wenn es sich um din RWMutex handelt, ob es eine 
-R-Lock operation ist.\\
-Sind die periodische und die abschließende Detektion in den Optionen deaktiviert,
-wird ist die Lock Operation an diesem Punkt beendet. Ist mindestens eine von 
-ihnen aktiviert, wird nun der Lock-Baum der entsprechenden Routine aktualisiert.\\
-Zuerst wird überprüft, ob für für die entsprechende Routine bereits ein 
-Lock-Baum existiert. Ist dies nicht der Fall wird ein leere Baum erzeugt und 
-mit dieser Routine verknüpft.\\
+R-Lock-Operation ist.\\
+Anschließend wird überprüft, ob für für die entsprechende Routine bereits ein 
+Lock-Baum existiert, die Routine also bereits initialisiert worden ist. 
+Ist dies nicht der Fall wird die Routine initialisiert und damit ein leere Baum 
+für diese Routine erzeugt.\\
 Solange die Detektion von doppeltem Locking nicht deaktiviert ist, wird nun
 überprüft, ob das Beanspruchen dieses Locks zu einem Deadlock führen würde.
 Dazu wird zuallererst überprüft, ob der Mutex momentan bereits von einer 
@@ -177,7 +186,14 @@ solange der Aufruf der exakt selben Beanspruchung (selbe Datei und selbe Zeilenn
 noch nicht gespeichert wurde. Hält die Routine allerdings bereits ein oder 
 mehrere Lock, wird die entsprechende Dependency in den Lock-Baum eingefügt,
 solange sie in dieser noch nicht existiert. Diese Überprüfung wird mit Hilfe 
-von ``dependencyMap'' ausgeführt. Existiert sie noch nicht, wird sie in den 
+von ``dependencyMap'' ausgeführt. Dazu wird jeder Situation ein 
+Key zugeordnet, die sich durch eine xOr Verknüpfung der Speicheradressen
+des aktuellen und des zuletzt gelockten Locks in der Routine gebildet wird.
+Existiert der Schlüssel nicht, kam die Situation noch nicht vor. Andernfalls 
+wird überprüft, ob die momentane Situation tatsächlich einer bereits vorkommenden 
+Situation entspricht, welche in der dependencyMap als mit dem Key verknüpften Value 
+gespeichert werden.
+Existiert die Situation noch nicht, wird sie in den 
 Lock-Baum und in dependencyMap eingefügt. Für diese Dependency entspricht ``mu''
 gerade dem zu lockenden Mutex und ``holdingSet'' dem momentanen ``holdingSet'' 
 der Routine, also der Liste aller Mutexe, die von der Routine im Moment gehalten 
@@ -195,12 +211,12 @@ die (R)-TryLock-Operation gehalten wird und von einer anderen Operation ebenfall
 beansprucht werden soll. Es wird also zuerst versucht das Lock zu beanspruchen.
 Wenn die Beanspruchung erfolgreich war, wird angepasst wie oft das Mutex gelockt ist,
 das Mutex in das ``holdingSet'' der Routine eingefügt und anschließend zurück 
-gegeben, ob die (R)-TryLock operation erfolgreich war
+gegeben, ob die (R)-TryLock-Operation erfolgreich war
 \subsection{(R)-Unlock}
 Zuerst wird überprüft, ob der Mutex überhaupt gelockt ist. Ist dies nicht der 
 Fall wird das Programm mit einer Fehlermeldung abgebrochen. Andernfalls
 wird die Anzahl der Lockungen des Locks angepasst, dass Mutex aus dem 
-``holdingSet'' entfernt und das Lock wieder frei gegeben.
+``holdingSet'' der Routine entfernt und das eigentliche Lock wieder frei gegeben.
 
 \section{Periodische Detektion} \label{Kap::Implementation:Periodical}
 Ist sie nicht deaktiviert, so wird die periodische Detektion in regelmäßigen 
@@ -208,10 +224,11 @@ Abständen (default: 2s) gestartet
 um nach lokalen, tatsächlich auftretenden Deadlocks zu suchen. Lokal bedeutet 
 dabei, dass sich nur ein Teil der Routinen in einem Deadlock befindet. Sollte 
 es zu einem totalen Deadlock kommen, bei dem alle Routinen blockiert werden, 
-wird das Programm automatisch von der Go Runtime Deadlock Detection beendet. In 
+wird das Programm automatisch von der Go Runtime Deadlock Detection (s. Kap. \ref{Kap::Review:GRDD})
+beendet. In 
 diesem Fall ist keine weiter abschließende Detektion von Deadlocks möglich.\\\\
 Für die periodische Detektion wird von jeder Routine nur ``curDep'' betrachtet,
-also diejenige Routine, welche als letztes in den Lock-Baum eingefügt wurde. 
+also diejenige Dependency, welche als letztes in den Lock-Baum eingefügt wurde. 
 Die Detektion wird nur ausgeführt, wenn sich diese Menge seit der letzten 
 periodischen Detektion verändert hat und momentan mindestens zwei Routinen im 
 Moment ein Lock halten.
@@ -222,17 +239,17 @@ entspricht immer dem momentan betrachteten Pfad. Anschließend wird für
 die ``curDep'' jeder Routine, die noch nicht auf dem Stack liegt und noch 
 nicht zuvor bereits betrachtet wurde überprüft,
 ob das hinzufügen der Dependency zu einer gültigen Kette führt, ob also 
-die Formeln \ref{For::Theo:LockTree.a} - \ref{For::Theo:LockTree.d} immer noch 
+die Formeln \eqref{For::Theo:LockTree.a} - \eqref{For::Theo:LockTree.d} immer noch 
 gelten. Ist dies der Fall, so wird überprüft, ob die Kette einen Kreis 
-bildet, also ob die Formeln \ref{For::Implementation:Periodical.e} und 
-\ref{For::Implementation:Periodical.f} ebenfalls gelten. Ist der Pfad mit der 
+bildet, also ob die Formeln \eqref{For::Implementation:Periodical.e} und 
+\eqref{For::Implementation:Periodical.f} ebenfalls gelten. Ist der Pfad mit der 
 neuen Dependency eine gültige Kette aber kein Kreis, so wird die Dependency
 auf den Stack gelegt und das ganze rekursiv wiederholt. Ist die Kette ein Kreis,
-so nimmt dass Programm fürs erst an, es sei ein lokaler Deadlock erkannt worden.
+so nimmt dass Programm vorerst an, es sei ein lokaler Deadlock erkannt worden.
 In diesem Fall wird überprüft, ob sich die HoldingSets der Routinen, von denen
 sich eine Dependency in der Kette befindet seit dem Begin der momentanen 
-periodische Detektion verändert hat. Ist dies der Fall, so geht der Detektor 
-vorerst davon aus, dass es sich um einen falschen Alarm handelt. Andernfalls 
+periodische Detektion verändert hat. Ist dies der Fall, so geht der Detektor
+ davon aus, dass es sich um einen falschen Alarm handelt. Andernfalls 
 wird dem Nutzer mitgeteilt, dass ein Deadlock gefunden wurde, es wird die 
 abschließende Detektion gestartet und das Programm anschließend abgebrochen.
 Gibt es keine Dependency die, wenn sie auf den Stack gelegt wird zu einer 
@@ -247,7 +264,8 @@ Die abschließende Detektion wird am Ende des Programs durchgeführt um
 potentielle Deadlock zu finden, auch wenn diese in dem Durchlauf nicht 
 tatsächlich aufgetreten sind. Sie muss vom Nutzer manuell in seinem Code 
 gestartet werden. Sie wird in diesem Fall nur ausgeführt, wenn sie nicht 
-deaktiviert ist, die Anzahl der Routinen, die in dem Program vorkamen 
+deaktiviert ist und
+ die Anzahl der Routinen, die in dem Program vorkamen 
 sowie die Anzahl der einzigartigen Dependencies mindestens zwei ist.\\
 Im Großen und Ganzen verläuft die Detektion 
 identisch zu der periodischen Detektion (vgl. \ref{Kap::Implementation:Periodical}).
@@ -275,12 +293,11 @@ für solch eine Ausgabe gegeben:
   $/$home$/***/$undead$\_$test.go 239\\
   $/$home$/***/$undead$\_$test.go 240\\\\
 \end{mdframed}
-Für Doppeltes Locking ist es nicht möglich, den Stacktrace für die Lock-Vorgänge
-anzuzeigen. \textcolor{red}{könnte man des noch einfügen}
 \subsection{Deadlocks}
-Bei einem tatsächlichen oder potentiellen Deadlock werden die in dem 
-Zyklus, welcher den Deadlock verursacht vorkommenden Locks, sowie die Positionen
-ihrer Lock-Operationen angegeben. Dazu werden die callerInfo der Mutexe in den 
+Bei einem tatsächlichen oder potentiellen Deadlock werden die Locks, welche in 
+dem Zyklus, welcher den Deadlock erzeugt vorkommen, mit den Positionen
+ihrer Initialisierung und ihren (Try-)(R-)Lock-Operationen angegeben. Dazu 
+werden die callerInfo der Mutexe in den 
 Dependencies betrachtet, die in dem Stack, welcher einen Deadlock beschreibt 
 vorkommen.\\
 Dies führt z.B. zu folgender Ausgabe:

@@ -8,7 +8,7 @@ Locks gehören zu den am weitesten verbreiteten Mechanismen um solche kritische
 Bereiche in einem Program zu schützen \cite{zhou}.
 Möchte ein Routine $R_1$ nun in einen Bereich 
 eintreten, der durch ein Lock, welches bereits von einer anderen Routine $R_0$ 
-gehalten wird, geschützt ist, muss sie so lange vor dem Lock warten, bis dieses 
+gehalten wird, geschützt ist, muss sie so lange vor dem Lock warten, bis das Lock 
 von $R_0$ wieder frei gegeben wird.
 \subsection{Operationen}
 Auf Locks sind in der Regel die drei folgenden Operationen definiert.
@@ -32,7 +32,7 @@ Neben den allgemeinen Locks gibt es noch Reader-Writer Locks. Diese haben im
 Vergleich zu den allgemeinen Locks zwei Lock und TryLock Operation, R-Lock und 
 W-Lock (analog für Try-Lock). W-Lock, im folgenden einfach Lock genant funktioniert 
 identisch zu Lock in den allgemeinen Locks. Bei R-Locks hingegen ist es, anders 
-als bei Lock, dass das Lock gleichzeitig von verschiedenen Routine gehalten wird
+als bei Lock, möglich dass das Lock gleichzeitig von verschiedenen Routine gehalten wird
 (oder mehrfach von der selben Routine), solange alle diese Beanspruchungen durch 
 R-Lock erfolgt sind. Es ist nicht möglich ein Lock gleichzeitig durch R-Lock und 
 Lock zu schließen.
@@ -45,8 +45,8 @@ Im großen und ganzen lassen sich Deadlocks in zwei Gruppen einteilen:
 Ressourcen-Deadlocks und Kommunikations-Deadlocks \cite{zhou}.
 Im folgenden sollen jedoch nur durch Locks erzeugte Ressourcen-Deadlocks 
 betrachtet werden.\\
-Ein Deadlock kann nun entstehen, wenn all Treads vor einem solchen Lock warten 
-müssen, wobei die Locks immer von einem anderen Tread gehalten werden. 
+Ein Deadlock kann nun entstehen, wenn all Routinen vor einem solchen Lock warten 
+müssen, wobei die Locks immer von einer anderen Routine gehalten werden. 
 Im folgende bezeichnet $acq_i(l)$, dass das Lock $l$ von der Routine $R_i$ 
 beansprucht und $rel_i(l)$, dass $l$ von $R_i$ wieder freigegeben wird. 
 Man betrachte nun das folgende Beispiel \cite{sulzmann} mit den Routinen 
@@ -161,7 +161,8 @@ seine eigenen Abhängigkeiten. Dies bedeutet, dass der Lock-Baum $b$ der
 Routine $R$ genau dann die Kante $x\to y$ besitzt, wenn in Routine $R$ das 
 Lock $y$ beansprucht wird, während in das Lock $x$ in $R$ bereits gehalten wird.\\
 Im folgenden, wird ein Lock-Baum als eine Menge von Dependencies betrachtet. 
-Eine solche Dependency besteht aus einem Lock $mu$ und einer Menge von Locks $hs$,
+Eine solche Dependency besteht aus einem Lock $mu$ und einer Menge von Locks $hs$
+($\glqq$holdingSet$\grqq$),
 von denen $mu$ anhängt, für die es also eine Kante $x \to mu$ mit $x \in hs$ gibt.\\
 Ein potentielles Deadlock liegt nun vor, wenn es in der Menge aller Dependencies
 eine gültige, zyklische Kette gibt.\\
@@ -186,16 +187,16 @@ Elementen ist eine gültige Kette, wenn die folgenden Eigenschaften gelten:
 Dabei bezeichnet $mu_i$ den Mutex und $hs_i$ das holdingSet der $i$-ten 
 Dependency in der Kette. $read(mu)$ bedeutet, dass das Locking von $mu$, welches 
 in der Dependency abgebildet ist durch ein R-Lock zustande gekommen ist.\\
-Formel \ref{For::Theo:LockTree.a} stellt sicher, dass die selbe 
-Dependency nicht mehr als ein mal in der Kette auftauchen kann. Formel 
-\ref{For::Theo:LockTree.b} besagt, dass die Dependencies tatsächlich
+\eqref{For::Theo:LockTree.a} stellt sicher, dass die selbe 
+Dependency nicht mehr als ein mal in der Kette auftauchen kann.  
+\eqref{For::Theo:LockTree.b} besagt, dass die Dependencies tatsächlich
 eine Kette bilden müssen, dass also der Mutex einer Dependency immer in dem 
 HoldingSet der nächsten Dependency in dem Pfad enthalten sein muss. 
 Auch wenn dies wahr ist, ist dies dennoch keine gültige Kette, wenn sowohl der
-Mutex $mu_i$ als auch der Mutex $mu$ in $hs_{i+1}$, für die $mu = mu_i$ gilt 
+Mutex $mu_i$ als auch der Mutex $mu$ in $hs_{i+1}$, für die $mu = mu_i$ gilt, 
 beides Reader-Locks sind. Dass solche Pfade ausgeschlossen werden wird durch 
-Formel \ref{For::Theo:LockTree.c} sichergestellt. Die letzte Formel 
-\ref{For::Theo:LockTree.d} beschäftigt sich mit Gate-Locks. 
+\eqref{For::Theo:LockTree.c} sichergestellt. Die letzte Formel 
+\eqref{For::Theo:LockTree.d} beschäftigt sich mit Gate-Locks. 
 Sie besagt, dass wenn es einen Mutex gibt, 
 der in den HoldingSets zweier verschiedener Dependencies in dem Pfad vor kommt, 
 so müssen beide diese Mutexe Reader-Locks sein. Sind sie es nicht, handelt es 
