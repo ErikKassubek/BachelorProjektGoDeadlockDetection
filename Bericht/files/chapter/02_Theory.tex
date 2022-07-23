@@ -217,11 +217,12 @@ gilt.\\\\
 Diese Bäume haben mehrere Vorteile gegenüber Lock-Graphen. Da jede Routine seine 
 eigene Datenstruktur hat, wird verhindert, dass es durch 
 gleichzeitigen Zugriff verschiedener Routinen auf die selbe Datenstruktur zu 
-Problemen kommet. Zudem muss die Zugehörigkeit der Abhängigkeiten zu 
+Problemen kommt. Zudem muss die Zugehörigkeit der Abhängigkeiten zu 
 verschiedenen Routinen nicht explizit gespeichert werden. Ein weiterer Vorteil 
-besteht darin, dass Gate-Locks bei Lock-Bäumen, anders als bei Lock-Graphen
-nicht zu False-Positives führen können.
-
+besteht darin, dass bei der Erkennung von Deadlocks mit Lock-Bäumen Situationen,
+die auf Grund von Gate-Locks nicht zu Deadlocks führen können, automatisch nicht
+als Deadlock erkannt werden, während es bei Lock-Graphen in solchen Fällen ohne 
+zusätzliche Tests zu falschen Detektionen kommt.  
 
 \subsection{Doppeltes Locking}
 Doppeltes Locking, wie in Kapitel \ref{Kap::Theo:DoubleLocking} beschrieben,
