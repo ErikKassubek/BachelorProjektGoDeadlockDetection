@@ -114,10 +114,10 @@ aller Locks. $E \subseteq L \times L$ ist definiert als $(l_1, l_2) \in E$ genau
 dann wenn es eine Routine $R$ gibt, auf welche $acq(l_2)$ ausgeführt wird, während sie 
 bereits das Lock $l_1$ hält \cite{bensalem}. Mathematisch ausgedrückt gilt also 
 \begin{align*}
-    (l_1, l_2) \in E \Leftrightarrow \exists t_1, t_3 \not\exists t_2\ ((t_1 < t_2 < t_3) \land aqr(l_1)[t_1] \land rel(l_1)[t_2] \land  aqr(l_2)[t_3])
+    (l_1, l_2) \in E \Leftrightarrow \exists t_1, t_3\ \nexists t_2\ \exists i\ ((t_1 < t_2 < t_3) \land aqr_i(l_1)[t_1] \land rel_i(l_1)[t_2] \land  aqr_i(l_2)[t_3])
 \end{align*}
-wobei $aqr(l_1)[t_i]$ bedeutet, dass $aqr(l_1)$ zum Zeitpunkt $t_i$ ausgeführt 
-wird und equivalent für $rel(l_1)[t_i]$.\\
+wobei $aqr_i(l_1)[t_i]$ bedeutet, dass $aqr(l_1)$ zum Zeitpunkt $t_i$ auf Routine 
+$i$ ausgeführt wird und equivalent für $rel_i(l_1)[t_i]$.\\
 Ein Deadlock kann nun auftreten wenn es innerhalb dieses Graphen einen Kreis 
 gibt. Um zu verhindern, dass ein False-Positive dadurch ausgelöst wird, dass 
 alle Kanten in einem solchen Kreis aus der selben Routine kommen (wodurch kein 
