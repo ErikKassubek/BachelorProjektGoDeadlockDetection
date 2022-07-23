@@ -14,7 +14,7 @@ Programm-Code die Initialisierung sowie die (Try-)(R-)Lock Operationen aufgerufe
 Diese werden dem Nutzer bereitgestellt, wenn ein potentielles 
 Deadlock erkannt wurde, um das Auffinden und Korrigieren des entsprechenden Deadlocks 
 im Programmcode zu erleichtern.\\
-Das folgende Program ist ein Beispiel zur Verwendung des Detektors:
+Das folgende Programm ist ein Beispiel zur Verwendung des Detektors:
 \begin{figure}[H]
   \lstinputlisting{code/implementation_ex_1.go}
 \end{figure}
@@ -68,7 +68,7 @@ Dabei handelt es sich um die folgenden Informationen:
     CallerInfo sind die Informationen darüber wo in dem Programm-Code die 
     Initialisierung und die (Try-)(R-)Lock Operationen stattgefunden haben. 
     Dazu werden die Datei und Zeilennummer gespeichert. Je nachdem, wie das 
-    Program über die Optionen konfiguriert ist, kann auch ein vollständiger 
+    Programm über die Optionen konfiguriert ist, kann auch ein vollständiger 
     Call-Stack für die entsprechenden Operationen gespeichert werden. 
   \item in (bool) ist ein Marker welcher speichert, ob der Mutex richtig 
       initialisiert wurde. Es ist nicht mögliche ein Mutex einfach durch 
@@ -224,7 +224,7 @@ Abständen (default: 2s) gestartet
 um nach lokalen, tatsächlich auftretenden Deadlocks zu suchen. Lokal bedeutet 
 dabei, dass sich nur ein Teil der Routinen in einem Deadlock befindet. Sollte 
 es zu einem totalen Deadlock kommen, bei dem alle Routinen blockiert werden, 
-wird das Programm automatisch von der Go Runtime Deadlock Detection (s. Kap. \ref{Kap::Review:GRDD})
+wird das Programm automatisch von der Go Runtime Deadlock Detection
 beendet. In 
 diesem Fall ist keine weiter abschließende Detektion von Deadlocks möglich.\\\\
 Für die periodische Detektion wird von jeder Routine nur ``curDep'' betrachtet,
@@ -256,7 +256,7 @@ Gibt es keine Dependency die, wenn sie auf den Stack gelegt wird zu einer
 gültigen Kette führt, so wird die oberste Dependency von dem Stack entfernt,
 so dass andere mögliche Pfade betrachtet werden können.\\
 Wenn es keinen Pfad gibt, der eine gültige, zyklisches Kette bildet, so geht 
-der Detektor davon aus, dass sich das Program nicht in einem lokalen Deadlock
+der Detektor davon aus, dass sich das Programm nicht in einem lokalen Deadlock
 befindet.
 
 \section{Abschließende Detektion}
@@ -265,7 +265,7 @@ potentielle Deadlock zu finden, auch wenn diese in dem Durchlauf nicht
 tatsächlich aufgetreten sind. Sie muss vom Nutzer manuell in seinem Code 
 gestartet werden. Sie wird in diesem Fall nur ausgeführt, wenn sie nicht 
 deaktiviert ist und
- die Anzahl der Routinen, die in dem Program vorkamen 
+ die Anzahl der Routinen, die in dem Programm vorkamen 
 sowie die Anzahl der einzigartigen Dependencies mindestens zwei ist.\\
 Im Großen und Ganzen verläuft die Detektion 
 identisch zu der periodischen Detektion (vgl. \ref{Kap::Implementation:Periodical}).

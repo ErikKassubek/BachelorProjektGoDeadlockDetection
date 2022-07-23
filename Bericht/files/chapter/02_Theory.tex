@@ -5,7 +5,7 @@ Im folgenden werden die Begriffe Lock und Mutex synonym verwendet.\\
 Es gibt Situation in nebenläufigen Programmen, in denen sich verschiedene 
 Routienen nicht gleichzeitig in bestimmten Bereichen aufhalten dürfen.\\
 Locks gehören zu den am weitesten verbreiteten Mechanismen um solche kritische 
-Bereiche in einem Program zu schützen \cite{zhou}.
+Bereiche in einem Programm zu schützen \cite{zhou}.
 Möchte ein Routine $R_1$ nun in einen Bereich 
 eintreten, der durch ein Lock, welches bereits von einer anderen Routine $R_0$ 
 gehalten wird, geschützt ist, muss sie so lange vor dem Lock warten, bis das Lock 
@@ -39,18 +39,14 @@ Lock zu schließen.
 
 \section{Deadlock} \label{Kap::Theo:Deadlocks}
 Ein Deadlock ist ein Zustand in einem nebenläufigen Programm, also einem 
-Programm, in denen mehrere Routinen gleichzeitig ausgeführt werden, indem alle 
-laufenden Routinen zyklisch auf die Freigabe von Ressourcen warten.\\
-Im großen und ganzen lassen sich Deadlocks in zwei Gruppen einteilen: 
-Ressourcen-Deadlocks und Kommunikations-Deadlocks \cite{zhou}.
-Im folgenden sollen jedoch nur durch Locks erzeugte Ressourcen-Deadlocks 
-betrachtet werden.\\
-Ein Deadlock kann nun entstehen, wenn all Routinen vor einem solchen Lock warten 
-müssen, wobei die Locks immer von einer anderen Routine gehalten werden. 
-Im folgende bezeichnet $acq_i(l)$, dass das Lock $l$ von der Routine $R_i$ 
-beansprucht und $rel_i(l)$, dass $l$ von $R_i$ wieder freigegeben wird. 
-Man betrachte nun das folgende Beispiel \cite{sulzmann} mit den Routinen 
-$R_1$ und $R_2$:
+Programm, in dem mehrere Routinen gleichzeitig ausgeführt werden, wobei alle 
+laufenden Routinen zyklisch auf die Freigabe von Ressourcen warten.
+Ein solcher Deadlock kann nun entstehen, wenn all Routinen vor einem Lock warten 
+müssen, wobei die Locks immer von einer anderen Routine gehalten werden.\\
+Man betrachte dazu das folgende Beispiel \cite{sulzmann} mit den Locks $x$ und $y$ 
+und den beiden Routinen $R_1$ und $R_2$, welches den Ablauf eines Programms 
+darstellt. $acq_i(l)$ bezeichnet dabei, dass das Lock $l$ von der Routine $R_i$ 
+beansprucht und $rel_i(l)$, dass $l$ von $R_i$ wieder freigegeben wird.
 \begin{table}[H]
     \centering
     \begin{tabular}{ccc}
@@ -65,35 +61,37 @@ $R_1$ und $R_2$:
     8. &              & $rel_{2}(x)$
     \end{tabular}
 \end{table}
-Da $R_1$ und $R_2$ gleichzeitig ablaufen ist folgender Ablauf möglich:
+Da $R_1$ und $R_2$ gleichzeitig ablaufen ist es möglich, dass sich die 
+Reihenfolge der einzelnen Operationen zwischen den Routinen ändert (die Reihenfolge
+innerhalb einer Routine ist immer gleich). Damit ist für das Programm, welches 
+zu dem obigen Ablauf geführt hat, auch folgender Ablauf möglich. 
 \begin{table}[H]
     \centering
     \begin{tabular}{ccc}
        & $R_1$          & $R_2$          \\
     1. & $acq_{1}(y)$ &                \\
     5. &                & $acq_{2}(x)$ \\
-    2. & $B-acq_{1}(x)$ &                \\
-    6. &                & $B-acq_{2}(y)$
+    2. & $B_2-acq_{1}(x)$ &                \\
+    6. &                & $B_1-acq_{2}(y)$
     \end{tabular}
 \end{table}
-Dabei impliziert $B-acq_i(l)$, dass $acq_{i}(l)$ nicht ausgeführt werden konnte,
+Dabei impliziert $B_j-acq_i(l)$, dass $acq_{i}(l)$ nicht ausgeführt werden konnte,
 bzw. dass die Routine $R_i$ vor dem Lock halten muss, da das Lock bereits von 
-einer anderen Routine beansprucht wird. In diesem Beispiel wartet nun $R_1$ 
-darauf, dass das Lock $x$ geöffnet wird und $R_2$ wartet darauf, dass Lock 
-$y$ geöffnet wird. Da nun alle Routinen warten müssen, bis ein Lock freigegeben 
+Routine $R_j$ beansprucht wird. In diesem Beispiel wartet nun $R_1$ 
+darauf, dass das Lock $x$ freigegeben wird und $R_2$ wartet darauf, dass Lock 
+$y$ freigegeben wird. Da nun alle Routinen warten müssen, bis ein Lock freigegeben 
 wird, allerdings keine der Routinen weiter laufen kann um ein Lock zu öffnen, 
-kommt es zum Stillstand. Dieser Zustand wird als zyklicher Deadlock bezeichnet.\\
+kommt es zum Stillstand. Dieser Zustand wird als zyklicher Deadlock bezeichnet.\\\\
 Eine andere Situation, bei der ein Deadlock entstehen kann tritt auf, wenn 
 eine Routine das selbe Lock mehrfach beansprucht, ohne es zwischendurch wieder 
 frei zu geben. Dies ist sogar möglich, wenn in dem Programm zu diesem Zieitpukt
-nur eine Routine aktiv ist. Ein Beispiel dafür gibt folgendes Programm:
+nur eine Routine aktiv ist. Ein Beispiel dafür gibt der folgende Programmablauf:
 \begin{table}[H]
     \centering
     \begin{tabular}{cc}
         & $R_1$ \\
         1. & $acq_{1}(x)$ \\
-        2. & $acq_1(x)$\\
-        3. & $rel_1{x}$
+        2. & $B_1-acq_1(x)$
     \end{tabular}
 \end{table}
 Die Routine muss dabei vor der zweiten Beanspruchung warten,

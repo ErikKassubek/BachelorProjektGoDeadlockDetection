@@ -1,5 +1,4 @@
-\chapter{Review bestehender Tools}
-\section{go-deadlock}\label{Chap::Review:go-deadlock}
+\chapter{Review für go-deadlock}\label{Chap::Review:go-deadlock}
 Im folgenden soll eine Software zur Erkennung von Deadlocks analysiert werden.
 Dazu wird die Software ``sasha-s/go-deadlock`` \cite{sasha-s}, veröffentlicht 
 auf Github, betrachtet.\\
@@ -20,7 +19,7 @@ Für die Erkennung werden drei verschiedene Fälle betrachtet:
 \end{itemize}
 Diese sollen im folgenden genauer betrachtet werden.
 
-\subsection{Doppeltes Locking}\label{Kap::Rev:Recursive}
+\section{Doppeltes Locking}\label{Kap::Rev:Recursive}
 Um doppeltes Locking zu erkennen speichert das Programm ein Dictionary $cur$ mit 
 allen momentan gehaltenen 
 Locks. Die Werte zu den jeweiligen Keys speichern sowohl, von welcher Go-Routine das 
@@ -35,7 +34,7 @@ handelt und führt
 entsprechende Schritte aus, um den Nutzer zu warnen. Wird ein Lock wieder frei
 gegeben, wird der entsprechende Eintrag aus $cur$ entfernt.
 
-\subsection{Zyklisches Locking}\label{Kap::Rev:Cyclic}
+\section{Zyklisches Locking}\label{Kap::Rev:Cyclic}
 Mit dieser Methode werden mögliche Deadlocks gefunden, die dadurch entstehen,
 dass alle Threads zyklisch auf die Freigabe eines Locks warten, welches von 
 einem anderen Thread gehalten wird.\\ 
@@ -74,7 +73,7 @@ Routine vor ihrer zweiten Zeile warten und es kommt zu einem Deadlock. Da diese
 Konstellation in einem Lockgraphen aber zu einem Kreis mit einer Länge von drei 
 Kanten führen würde, kann das Programm den möglichen Deadlock nicht erkennen.\\
 
-\subsection{Timeout}
+\section{Timeout}
 Neben diesen beiden Methoden, die vorausschauend nach möglichen Deadlocks 
 Ausschau halten, versucht das Programm auch mit Timeouts um zu überprüfen ob 
 sich das Programm bereits in einem Deadlock befindet. Möchte eine Routine ein 
@@ -103,7 +102,7 @@ festgelegte maximale Wartezeit von $30 s$ nimmt das Programm an, es sei in einen
 Deadlock gekommen, obwohl kein Solcher vorliegt, und auch kein Deadlock möglich 
 ist.
 
-\subsection{False Negatives / Positives} \label{Kap::Rev:False}
+\section{False Negatives / Positives} \label{Kap::Rev:False}
 Bei False Negatives oder False Positives handelt es sich um Fälle, bei denen es 
 zu einem Deadlock kommen kann, ohne dass dieser Detektiert wird, bzw. Fälle die
 nicht zu einem 
@@ -125,16 +124,3 @@ Ein Fall, bei dem es zu False Positives kommen kann, wird durch Gate-Locks
 ausgelöst. Wie bereits beschrieben ist ein auf Lock-Graphen basierender Detektor,
 und damit solch ein Detektor nicht in der Lage zu erkennen, wenn ein 
 potentielles Deadlock durch Gate-Locks unmöglich gemacht wird.
-
-\section{Go Runtime Deadlock Detection}\label{Kap::Review:GRDD}
-Nebenbei sei noch erwähnt, dass Go einen eigenen Detektor zur Erkennung von Deadlocks
-besitzt. Allerdings kann 
-dieser, im Unterschied zu dem in~\ref{Chap::Review:go-deadlock} betrachteten 
-Detector nur tatsächlich auftretende Deadlocks erkennen. Eine Erkennung ob 
-in dem Code ein Deadlock möglich ist findet hierbei nicht statt. Um zu erkennen,
-ob ein Deadlock vorliegt zählt Go die nicht blockierten Go-Routinen.
-Fällt dieser Wert auf $0$, nimmt Go an, dass es zu einem Deadlock gekommen 
-ist und bricht das Programm mit einer Fehlermeldung ab~\cite{grdd_code}. Die 
-Detektion erkennt auch nur Deadlocks, wenn sie alle Routinen betreffen. 
-Wenn es Routinen gibt, die sich zyklisch blockieren, andere Routinen aber 
-nicht blockiert sind wird solch eine Situation nicht erkannt.

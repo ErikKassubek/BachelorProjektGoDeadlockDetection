@@ -10,7 +10,8 @@ bezeichnet.\\
 Für den Vergleich werden verschiedene Beispiel-Programme betrachtet, die in 
 \cite{examples} implementiert sind. Diese bestehen zum einen aus verschiedenen 
 Standartsituationen, zum anderen auf Programmen, die aus tatsächlichen
-Programmen übernommen wurden. Diese werden aus \cite{gobench} ausgewählt.
+Programmen übernommen wurden. Diese werden aus Gobench \cite{gobench}, einer 
+Benchmark Suite für Parallelitätsfehler in Go ausgewählt.
 \section{Funktionale Analyse}
 Man betrachte die Programme zuerst funktional, d.h. man überprüft, ob sie zu den 
 gewünschten Ergebnissen führen.\\
@@ -108,7 +109,7 @@ können (11.2), erkennt aber doppeltes Locking allgemein, und damit auch, wenn
 es mit R-Locks zu doppeltem Locking kommt (11.1). Deadlock-Go kann beide Situationen
 korrekt erkennen.
 \\\\
-Im folgenden sollen nun Beispielprogramme aus \cite{implementation} 
+Im folgenden sollen nun Beispielprogramme aus GoBench
 betrachtet werden. Für Deadlock-Go wurden dabei alle Optionen aktiviert, um ein 
 optimales Detektionsergebnis zu erhalten.
 Die folgende Tabele \ref{Tab::Analyse:Functional.Example} gibt für jedes Programm an,

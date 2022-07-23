@@ -15,17 +15,37 @@ Da Deadlocks häufig nur in sehr bestimmten Fällen auftreten, kann es passieren
 dass solche Situationen während der Entwicklung eines Programms nicht bemerkt
 werden. Dies führt dazu, dass in einer Stichprobe in vier open-source Anwendungen 
 (MySql, Apache, Mozilla und OpenOffice) etwa $30\%$ aller Concurrency-Probleme 
-auf Deadlocks zurückzuführen waren \cite{Lu}. Ein Programm, bzw. eine Implementierung 
-von Locks, die solche Situationen erkennen kann, kann daher sehr hilfreich sein.
-Auf solche Programme soll im folgenden näher eingegangen werden. Dabei werden 
+auf Deadlocks zurückzuführen waren \cite{Lu}.\\\\
+Go besitzt die s.g. Go Runtime Deadlock Detection um Deadlocks zu erkennen. 
+Dazu zählt Go die nicht blockierten Go-Routinen.
+Fällt dieser Wert auf $0$, nimmt Go an, dass es zu einem Deadlock gekommen 
+ist und bricht das Programm mit einer Fehlermeldung ab~\cite{grdd_code}.
+Allerdings kann 
+dies nur tatsächlich auftretende Deadlocks erkennen. Eine Erkennung ob 
+in dem Code ein Deadlock potentiell möglich ist findet hierbei nicht statt. Die 
+Detektion erkennt auch nur Deadlocks, wenn sie alle Routinen betreffen. 
+Wenn es Routinen gibt, die sich zyklisch blockieren, andere Routinen aber 
+nicht blockiert sind wird solch eine Situation nicht erkannt.\\\\
+Da das Auftreten von Deadlocks sehr stark von dem tatsächlichen Ablauf eines 
+Programms abhängt, kann ein Programm, bzw. eine Implementierung 
+von Locks, welche potentielle Deadlocks erkennen kann sehr hilfreich sein.
+Die Betrachtung solcher Programme stellt den Hauptteil dieses Projekts da.
+Dabei werden 
 dynamische Programme betrachtet, also Programme, die während der Laufzeit des 
 eigentlichen Programs nach Deadlocks suchen. Diese speichern Abhängigkeiten 
 zwischen Lock-Operationen in Lock-Graphen oder Lock-Bäumen, und versuchen aus 
 diesen auf Deadlocks zu schließen.\\\\
-Nach einem Überblick über die Theorie wird ein vorhandener Detektor \cite{sasha-s}
-betrachtet und seine Funktionsweise analysiert. Anschließend wird ein eigener 
-Detektor für Deadlocks, teilweise basierend auf dem UNDEAD Detector \cite{zhou}
-für die Programmiersprache Go entwickelt und implementiert. Die Implementierung des Detectors 
-findet sich in \cite{implementation}. Der Detektor implementiert sowohl normale 
-Locks, als auch RW-Locks mit Lock, TryLock und Unlock Operationen. Im Anschluss 
-werden die beiden Detektoren analysiert und verglichen. 
+Der Bericht ist folgendermaßen aufgebaut: Zuerst wird auf den theoretischen 
+Hintergrund bezüglich Locks und Deadlocks, sowie die Erkennung von 
+potentiellen Deadlocks mit Lock-Graphen und Lock-Bäumen eingegangen. Anschließend
+wird die Funktionsweise eines Detektors für Deadlocks ``go-deadlock'' 
+\cite{sasha-s} analysiert, welcher auf Lock-Graphen basiert. Der Hauptteil 
+des Projekts beschäftigte sich mit der Entwicklung und Implementierung eines 
+auf Lock-Bäumen basierten Deadlock-Detektors für Go. Dieser basiert zum Teil 
+auf dem UNDEAD Algorithmus \cite{zhou}. Er wurde allerdings um weitere Funktionen,
+wie z.B. RW-Locks erweitert. Dessen Aufbau und Funktionsweise wird in Kapitel 
+\ref{Kap::Implementaion} beschrieben. Zum Schluss werden die beiden betrachteten 
+Detektoren bezüglich ihrer Fähigkeit potentielle Deadlocks bzw. 
+Situationen, welche nicht zu Deadlocks führen können korrekt zu erkennen. Außerdem 
+wird der Einfluss der Detektoren auf die Laufzeit der Programme analysiert.
+
