@@ -38,6 +38,7 @@ R-Lock erfolgt sind. Es ist nicht möglich ein Lock gleichzeitig durch R-Lock un
 Lock zu schließen.
 
 \section{Deadlock} \label{Kap::Theo:Deadlocks}
+\subsection{Zyklischer Deadlock}
 Ein Deadlock ist ein Zustand in einem nebenläufigen Programm, also einem 
 Programm, in dem mehrere Routinen gleichzeitig ausgeführt werden, wobei alle 
 laufenden Routinen zyklisch auf die Freigabe von Ressourcen warten.
@@ -81,7 +82,8 @@ Routine $R_j$ beansprucht wird. In diesem Beispiel wartet nun $R_1$
 darauf, dass das Lock $x$ freigegeben wird und $R_2$ wartet darauf, dass Lock 
 $y$ freigegeben wird. Da nun alle Routinen warten müssen, bis ein Lock freigegeben 
 wird, allerdings keine der Routinen weiter laufen kann um ein Lock zu öffnen, 
-kommt es zum Stillstand. Dieser Zustand wird als zyklicher Deadlock bezeichnet.\\\\
+kommt es zum Stillstand. Dieser Zustand wird als zyklicher Deadlock bezeichnet.
+\subsection{Deadlock durch doppeltes Locking}\label{Kap::Theo:DoubleLocking}
 Eine andere Situation, bei der ein Deadlock entstehen kann tritt auf, wenn 
 eine Routine das selbe Lock mehrfach beansprucht, ohne es zwischendurch wieder 
 frei zu geben. Dies ist sogar möglich, wenn in dem Programm zu diesem Zieitpukt
@@ -107,7 +109,6 @@ einen solchen Deadlock zu erkennen, da das Auftreten eines Deadlock von dem
 genauen zeitlichen Ablauf der verschiedenen Routinen abhängt.\\
 Um dennoch Deadlocks 
 erkennen zu können, können Lock-Graphen oder Lock-Bäume verwendet werden, die 
-im folgenden betrachtet werden sollen.
 \subsection{Lock-Graphen}
 Ein Lock-Graph ist ein gerichteter Graph $G = (L, E)$. Dabei ist $L$ die Menge 
 aller Locks. $E \subseteq L \times L$ ist definiert als $(l_1, l_2) \in E$ genau 
@@ -223,8 +224,14 @@ nicht zu False-Positives führen können.
 
 
 \subsection{Doppeltes Locking}
-Um doppeltes Locking zu erkennen ist es ausreichend vor der Lock-Operation 
-zu überprüfen, ob das Lock bereits von der selben Routine gehalten wird, ohne 
-dass es sich bei beiden Operationen um Reader-Locks handelt.
+Doppeltes Locking, wie in Kapitel \ref{Kap::Theo:DoubleLocking} beschrieben,
+ lässt sich nicht aus den Lock-Graphen oder Lock-Bäumen erkennen.\\
+Es ist daher notwendig diese gesondert zu betrachten. Dazu speichert jedes Lock, 
+von welchen Routinen es momentan gehalten wird, und für welche dieser 
+Beanspruchungen es als R-Lock beansprucht worden ist.\\
+Währen dem (R-)(Try-)Lock Vorgang, noch bevor es zu der eigentlichen Beanspruchung 
+kommt, wird überprüft, ob das Lock in der selben Routine bereits gehalten 
+wird, ohne dass es sich bei beiden Operationen um Reader-Locks handelt. In diesem 
+Fall kommt es zu einem Deadlock.
 
 

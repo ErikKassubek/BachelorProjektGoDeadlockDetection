@@ -39,10 +39,7 @@ auftreten kann und gibt somit eine false-positive Mitteilung über ein potentiel
 Deadlock aus.\\ 
 sasha-s ist standardmäßig dazu in  der Lage doppeltes Locking zu erkennen.
 Bei Deadlock-Go hängt die Erkennung solcher Deadlocks von den Optionen ab.
-UNDEAD, auf dem die Implementierung basiert ist nicht in der Lage, doppeltes 
-Locking zu erkennen. Da diese aber dennoch auftreten können, wurde diese 
-Implementierung um eine solche Erkennung erweitert. Diese kann allerdings 
-in den Optionen deaktiviert werden. Standardmäßig ist Deadlock-Go also auch in 
+Ist die Erkennung von doppeltem Locking nicht deaktiviert, ist Deadlock-Go also auch in 
 der Lage solche Deadlocks durch doppeltes Locking zu erkennen (5). \\ 
 Bei verschachtelten Routinen wie in \ref{Kap::Rev:Cyclic} beschrieben ist 
 keines der Tools in der Lage das potentielle Deadlock zu erkennen (4).\\

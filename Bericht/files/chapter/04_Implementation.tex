@@ -5,7 +5,7 @@ betrachtet werden. Dieser wurde entwickelt um Ressourcen-Deadlocks in Go-Program
 zu erkennen und den Nutzer vor solchen zu warnen. Der Code kann in 
 \cite{implementation} gefunden werden.\\
 Der Detektor basiert zum Teil auf dem UNDEAD-Algorithmus \cite{zhou}. 
-Zusätzlich wurde er um RW-Locks sowie eine Detektion von doppeltem Locking 
+Zusätzlich wurde er um RW-Locks
 erweitert, welche in UNDEAD nicht betrachtet werden.\\
 Der Detektor implementiert dabei Lock-Bäume, mit welchen zyklisches Locking 
 erkannt werden kann. Neben den Informationen, die für die Erkennung solcher 
