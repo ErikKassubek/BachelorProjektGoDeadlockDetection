@@ -106,8 +106,9 @@ können (11.2), erkennt aber doppeltes Locking allgemein, und damit auch, wenn
 es mit R-Locks zu doppeltem Locking kommt (11.1). Deadlock-Go kann beide Situationen
 korrekt erkennen.
 \\\\
-Im folgenden sollen nun Beispielprogramme aus GoBench
-betrachtet werden. Für Deadlock-Go wurden dabei alle Optionen aktiviert, um ein 
+Im folgenden sollen nun Beispielprogramme aus GoBench \cite{gobench}
+betrachtet werden. Dabei handelt es sich um Programme mit etwa 100 Zeilen und 
+1 bis 3 Routinen. Für Deadlock-Go wurden dabei alle Optionen aktiviert, um ein 
 optimales Detektionsergebnis zu erhalten.
 Die folgende Tabele \ref{Tab::Analyse:Functional.Example} gibt für jedes Programm an,
  ob es von den Detektoren erkannt wurde.
@@ -155,129 +156,68 @@ Situation kommen in dem Beispielen allerdings nicht vor.
 
 
 \section{Zeitliche Analyse}
-Im folgenden soll der Einfluss der Detektion auf die Laufzeit eines Programms 
-für beide Detektoren betrachtet werden. Dafür werden die Laufzeiten der 
-Standardprogramme aus Tab. \ref{Tab::Analyse:Functional.Standart} betrachtet, 
-welche nicht zu einem tatsächlichen Deadlock führen und von keinem Detektor 
-(fälschlicherweise) als solches erkannt wird. Außerdem werden keine Beispiele 
-für Beispiele mit Try-Locks betrachtet, da diese von sasha-s nicht unterstützt werden.\\ 
-Da die Laufzeit von der verwendeten Hardware, sowie anderen äußeren Faktoren 
-abhängt, sollten diese Messwerte immer nur relativ zu den anderen Messungen 
-in diesem Bericht, nicht aber als eigenständige, absolute Werte gesehen werden.\\ 
-Für jedes dieser Programme 
-wird in der folgenden Tabelle die Laufzeit ohne sowie mit Detektor angezeigt.
-Für Deadlock-Go wird jeweils sowohl die Laufzeit der Programmausführung (ohne 
-abschließende Detektion) und die Gesamtlaufzeit angegeben. Dabei wird auf verschiedene 
-Weisen gemessen. Für die Messung ohne Detektor wird die Messung 1000 mal wiederholt
-der Mittelwert angegeben. Dabei erhält man folgende Laufzeiten 
-(normiert auf durchschnittliche Zeit pro Durchlauf):
-
-\begin{table}[H]
-    \centering
-\begin{tabular}{|c|c|}
-\hline
-ID   & Laufzeit [$\mu$s]   \\ \hline
-1.1  & $1.7$ \\ \hline
-1.2  & $1.6$       \\ \hline
-2    & $2.6$        \\ \hline
-3    & $1.5$        \\ \hline
-4    & $2.0$        \\ \hline
-9.1  & $1.4$        \\ \hline
-9.2  & $1.4$       \\ \hline
-9.3  & $1.4$        \\ \hline
-9.4  & $1.5$        \\ \hline
-9.5  & $1.6$        \\ \hline
-9.6  & $1.4$        \\ \hline
-10.1 & $1.6$        \\ \hline
-10.2 & $1.5$        \\ \hline
-$\varnothing$ & $1.63$ \\ \hline 
-\end{tabular}
-\caption{Laufzeit der Programme ohne Detektor pro Durchlauf}
-\end{table}
-Für die Messung mit den Detektoren werden jeweils 
-mehrere Messungen betrachtet. Für den Deadlock-Go Detektor werden jeweils 4
-Messungen gemacht: Messung der Laufzeit von 1000 Durchläufen (mit und ohne 
-periodische Detektion) ohne abschließend Detektion, Messung der Laufzeit der abschließenden Detektion nach 
-einem Durchlauf und Messung der Laufzeit nach 1000 Durchläufen. Die Laufzeit
-wir jeweils wieder normiert auf die durchschnittliche Zeit pro Durchlauf angegeben.
-Für die Messungen wurde die Ausgabe des Warntextes deaktiviert.
-Für die Zeit der abschließenden Detektion wird die Gesamtzeit angegeben.
+Im folgenden soll der Einfluss der Detektoren auf die Laufzeit eines 
+Programmes betrachtet werden. Dazu werden Programme basierend auf 
+Programm 1.1 aus Tabelle \ref{Tab::Analyse:Functional.Standart}
+verwendet. Da die Laufzeit stark von der Anzahl der Lock und der 
+Anzahl der Routinen abhängt, werden vier verschiedene Fälle 
+analysiert. Als erstes wird Programm 1.1 mit zwei Routinen und 
+zwei Locks ($2\times 2$) verwendet. Zudem wird das Programm für die restlichen drei 
+Fälle verändert. Für den zweiten Fall werden ebenfalls zwei Routinen 
+verwendet, allerdings mit 100 Locks ($2\times 100$). Als drittes werden 
+100 Routinene mir zwei Locks ($100\times 2)$ und zum Schluss 100 Routinen 
+mit 100 Locks ($100\times 100$) betrachtet. Dabei erhält man folgende Werte:
 \begin{table}[H]
     \centering
     \begin{tabular}{|c|c|c|c|c|}
     \hline
-    ID &
-      \makecell{Laufzeit ohne\\periodischer\\Detektion [ms]} &
-      \makecell{Laufzeit mit\\periodischer\\Detektion [ms]} &
-      \makecell{Abschließende Detektion\\nach einem\\Durchlauf [ms]} &
-      \makecell{Abschließende Detektion\\nach 1000\\Durchläufen [ms]} \\ \hline
-    1.1  & 2.496 & 2.586 & 0.031 & 96.496  \\ \hline
-    1.2  & 2.523 & 2.668 & 0.056 & 112.773  \\ \hline
-    2    & 4.212 & 4.215 & 0.040 & 229.732  \\ \hline
-    3    & 2.908 & 3.237 & 0.010 & 200.216  \\ \hline
-    4    & 3.981 & 4.151 & 0.026 & 104.504   \\ \hline
-    9.1  & 2.574 & 2.747 & 0.044 & 95.580  \\ \hline
-    9.2  & 2.706 & 2.773 & 0.045 & 117.593  \\ \hline
-    9.3  & 2.921 & 2.973 & 0.028 & 140.848  \\ \hline
-    9.4  & 2.901 & 2.986 & 0.031 & 118.540  \\ \hline
-    9.5  & 3.004 & 3.228 & 0.038 & 101.845  \\ \hline
-    9.6  & 2.750 & 2.967 & 0.010 & 128.422  \\ \hline
-    10.1 & 2.743 & 2.922 & 0.009 & 119.455  \\ \hline
-    10.2 & 2.724 & 2.725 & 0.041 & 196.584 \\ \hline
-    $\varnothing$ & 2.957 & 3.091 & 0.0315 & 135.583 \\ \hline
+                  & $2\times 2$ [ms] & $2\times 100$ [ms] & $100\times 2$ [ms] & $100\times100$ [ms] \\ \hline
+    ohne Detektor & 0.006           & 0.010            & 0.110           & 0.244            \\ \hline
+    \makecell{Deadlock-Go\\ohne periodische} &
+      \makecell{0.070+0.002\\0.072} &
+      \makecell{0.740 + 41.325\\42.065} &
+      \makecell{2.175 + 0.260\\2.535} & \makecell{41.532 + 113 687.142\\113 728.674}
+       \\ \hline
+    \makecell{Deadlock-Go\\mit periodische} &
+      \makecell{0.072+0.002\\0.079} &
+      \begin{tabular}[c]{@{}l@{}}\makecell{0.804+41.585\\42.368}\\ \end{tabular} &
+      \makecell{2.178 + 0.263\\2.441} &
+      \makecell{60.509 + 106 799.742\\106 860.251} \\ \hline
+    Sasha-s       & 0.062          & 12.622         & 11.541         & 507.628         \\ \hline
     \end{tabular}
-    \caption{Laufzeit der Programme mit Deadlock-Go. Laufzeit Werte pro Durchlauf}
-    \label{Kap::Analysis:Deadlock-Go}
+    \caption{Laufzeiten der einzelnen Programm für bzw. ohne die Detektoren}
+    \label{Tab:Time}
 \end{table}
+Für die Detektion mit Deadlock-Go werden sowohl die Laufzeit des 
+eigentlichen Programms sowie die Laufzeit der abschließenden Detektion und 
+die Gesamtzeit angegeben. 
+Graphisch gibt sich folgendes Bild:
 
-Für sasha-s werden die Programme wieder 1000 mal durchlaufen und anschließend 
-der Mittelwert pro Durchlauf betrachtet. Dabei erhält man folgende Werte.
-\begin{table}[H]
-    \centering
-    \begin{tabular}{|l|l|}
-    \hline
-    ID   & Laufzeit [ms] \\ \hline
-    1.1  & 12.782        \\ \hline
-    1.2  & 8.687         \\ \hline
-    2    & 12.696        \\ \hline
-    3    & 18.451        \\ \hline
-    4    & 7.953         \\ \hline
-    9.1  & 8.621         \\ \hline
-    9.2  & 11.566        \\ \hline
-    9.3  & 8.583         \\ \hline
-    9.4  & 12.169        \\ \hline
-    9.5  & 9.219         \\ \hline
-    9.6  & 13.545         \\ \hline
-    10.1 & 7.737         \\ \hline
-    10.2 & 9.184         \\ \hline
-    $\varnothing$ & 10.861 \\ \hline
-    \end{tabular}
-    \caption{Laufzeit der Programme mit sasha-s. Laufzeit Werte pro Durchlauf}
-    \label{tab:my-table}
-\end{table}
-Es ist sehr offensichtlich, dass die Programme mit den Detektoren eine 
-signifikant längere Laufzeit haben. Während die Programme ohne Detektor im 
-Schnitt eine Laufzeit von $1.63\mu\text{s}$ haben, haben sie mit sasha-s ein durchschnittliche
-Laufzeit von $10.861$ ms und für Deadlock-Go mit periodischer Detektion $3.123$ ms - $138.674$ ms,
-Es sollte beachtet werden, 
-dass die Differenz zwischen der Laufzeit mit und ohne Detektor stark 
-von der Anzahl der auf Locks ausgeführten Optionen ist. Da die hier verwendeten 
-Beispielprogramme nahezu ausschließlich aus solchen Operationen bestehen, ist 
-der Effekt besonders hoch.\\ \\
-Wie die beiden Detektoren gegenseitig abschneiden hängst sehr stark von der 
-Anzahl der betrachteten Routinen und Locks bzw. Dependencies ab. Während bei 
-kleinen Programmen Deadlock-Go besser abschneidet, (vgl. Tab. \ref{Kap::Analysis:Deadlock-Go} mit 
-Abschließende Detektion nach einem Durchlauf), schneidet bei großen Programmen 
-mit vielen Routinen und Dependencies sasha-s deutlich besser ab (vgl. Tab \ref{Kap::Analysis:Deadlock-Go}
-Abschließende Detektion nach 1000 Durchläufen). Dabei fällt besonders 
-die abschließende Detektion ins Gewicht, welche sehr stark von der Anzahl der 
-Dependencies und Routinen abhängt.\\
-Beide Detektoren sind in der Lage, die Detektion zu deaktivieren, so dass die 
-dann nur noch 
-einen sehr geringe Verlängerung der Laufzeiten haben. Nachdem ein Programm 
-zu Ende entwickelt wurde, und alle potentiellen Deadlock beseitigt wurden, 
-kann die Detektion somit deaktiviert werden um die schnelleren Laufzeiten zu erreichen,
-ohne dass der Detector aus dem Code entfernt werden muss.
- 
-
-
+\begin{figure}[H]
+\begin{tabular}{cc}
+    \includegraphics[width=.4\textwidth]{img/2x2.png} & \includegraphics[width=.4\textwidth]{img/2x100.png}\\
+    \includegraphics[width=.4\textwidth]{img/100x2.png} & \includegraphics[width=.4\textwidth]{img/100x100.png}\\
+\end{tabular}
+\caption{Laufzeiten der betrachteten Situationen ohne Detektor, mit Deadlock-Go mit und Ohne periodische Detektion und sasha-s}
+\end{figure}
+Es ist klar sichtbar, dass die Detektoren einen deutlichen Einfluss auf 
+die Laufzeit haben. Bei dem Vergleich der beiden Detektoren bezüglich ihrer 
+Laufzeit kommt es auf das betrachtete Programm an, sind sowohl die Anzahl 
+der Routinen als auch die Anzahl der Dependencies klein, ist der unterschied
+zwischen den beiden Detektoren relativ gering. Sasha-S hat einen klaren 
+Vorteil, wenn es sich um ein Programm mit vielen Locks und damit vielen 
+Dependencies handelt. Da sasha-s immer nur Pfade der Länge zwei in seinem 
+Lock-Graphen betrachtet, 
+währen Deadlock-Go alle möglichen Pfade in seinen Lock-Bäumen analysiert, 
+muss Deadlock-Go deutlich mehr Pfade analysieren, und hat daher eine signifikant
+längere Laufzeit. Deadlock-Go hat dafür einen Vorteil, wenn die Anzahl der 
+Routinen groß, die Anzahl der Locks aber kein ist. Da die Lock-Bäume in Deadlock-go
+in diesem Fall alle sehr klein sind, verliest sasha-s seine Vorteil, dass 
+es nur Pfade der Länge 2 betrachtet. Allerdings überwiegt dieser wieder 
+deutlich, wenn sowohl die Anzahl der Routinen als auch die Anzahl der Lock groß
+ist.\\ \\
+Beide Detektoren sind in der Lage, die Detektion zu deaktivieren, so dass die dann nur noch einen
+sehr geringe Verlängerung der Laufzeiten haben. Nachdem ein Programm zu Ende entwickelt
+wurde, und alle potentiellen Deadlock beseitigt wurden, kann die Detektion somit deaktiviert
+werden um die schnelleren Laufzeiten zu erreichen, ohne dass der Detector aus dem Code entfernt
+werden muss.

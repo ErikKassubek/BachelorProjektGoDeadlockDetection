@@ -352,25 +352,25 @@ func DeadlockGateLocksRW() {
 	ch2 := make(chan bool) // prevent actual deadlock
 
 	go func() {
-		z.RLock()
+		z.Lock()
 		x.Lock()
 		y.Lock()
 		ch2 <- true
 		y.Unlock()
 		x.Unlock()
-		z.RUnlock()
+		z.Unlock()
 
 		ch <- true
 	}()
 
 	go func() {
 		<-ch2
-		z.RLock()
+		z.Lock()
 		y.Lock()
 		x.Lock()
 		x.Unlock()
 		y.Unlock()
-		z.RUnlock()
+		z.Unlock()
 
 		ch <- true
 	}()
@@ -390,18 +390,16 @@ func DeadlockRWDoubleLogging() {
 }
 
 func RunDeadlockGo() {
-	for i := 0; i < 1000; i++ {
-		// DeadlockGoPotentialDeadlock()
-		// DeadlockGoPotentialDeadlockThreeEdgeCirc()
-		// DeadlockGoNoPotentialDeadlockGateLocks()
-		// DeadlockGoNestedRoutines()
-		// DeadlockGoDoubleLogging()
-		// DeadlockGoActualDeadlock()
-		// DeadlockGoActualDeadlockThree()
-		// DeadlockDoubleLockingIncludingTryLock()
-		// DeadlockIncludingTryLock()
-		// DeadlockRwDeadlock()
-		DeadlockGateLocksRW()
-		// DeadlockRWDoubleLogging()
-	}
+	DeadlockGoPotentialDeadlock()
+	// DeadlockGoPotentialDeadlockThreeEdgeCirc()
+	// DeadlockGoNoPotentialDeadlockGateLocks()
+	// DeadlockGoNestedRoutines()
+	// DeadlockGoDoubleLogging()
+	// DeadlockGoActualDeadlock()
+	// DeadlockGoActualDeadlockThree()
+	// DeadlockDoubleLockingIncludingTryLock()
+	// DeadlockIncludingTryLock()
+	// DeadlockRwDeadlock()
+	// DeadlockGateLocksRW()
+	// DeadlockRWDoubleLogging()
 }

@@ -2,8 +2,6 @@ package main
 
 import (
 	"DeadlockExamples/selfWritten"
-	"fmt"
-	"time"
 
 	deadlock "github.com/ErikKassubek/Deadlock-Go"
 )
@@ -12,11 +10,9 @@ func main() {
 	deadlock.SetMaxRoutines(3100)
 	deadlock.SetPeriodicDetection(true)
 
-	start := time.Now()
+	selfWritten.RunDeadlockGo()
 
-	// selfWritten.RunDeadlockGo()
-
-	selfWritten.RunSasha()
+	// selfWritten.RunSasha()
 
 	// selfWritten.RunWithoutDetector()
 
@@ -38,12 +34,7 @@ func main() {
 
 	// time.Sleep(time.Second * 1)  // for otherExamples it is sometimes necessary to wait so that the detection is not started before the program has finished
 
-	ellapsedExecution := time.Since(start)
+	deadlock.FindPotentialDeadlocks()
 
-	// deadlock.FindPotentialDeadlocks()
-
-	// ellapsedTotal := time.Since(start)
-	fmt.Println(ellapsedExecution)
-	// fmt.Println(ellapsedTotal - ellapsedExecution)
-
+	// measureRuntime.RunTiming()
 }

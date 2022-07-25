@@ -43,8 +43,8 @@ func SashaPotentialDeadlock() {
 		y.Lock()
 		x.Lock()
 		ch2 <- true
-		x.Unlock()
 		y.Unlock()
+		x.Unlock()
 
 		ch <- true
 	}()
@@ -350,16 +350,15 @@ func SashaRWDoubleLogging() {
 
 func RunSasha() {
 	sasha.Opts.OnPotentialDeadlock = func() {} // for timing analysis
-	for i := 0; i < 1000; i++ {
-		// SashaPotentialDeadlock()
-		// SashaPotentialDeadlockThreeEdgeCirc()
-		// SashaNoPotentialDeadlockGateLocks()
-		// SashaNestedRoutines()
-		// SashaDoubleLogging()
-		// SashaActualDeadlock()
-		// SashaGoActualDeadlockThree()
-		SashaRwDeadlock()
-		// SashaGateLocksRW()
-		// SashaRWDoubleLogging()
-	}
+	SashaPotentialDeadlock()
+	// SashaPotentialDeadlockThreeEdgeCirc()
+	// SashaNoPotentialDeadlockGateLocks()
+	// SashaNestedRoutines()
+	// SashaDoubleLogging()
+	// SashaActualDeadlock()
+	// SashaGoActualDeadlockThree()
+	// SashaRwDeadlock()
+	// SashaGateLocksRW()
+	// SashaRWDoubleLogging()
+
 }
