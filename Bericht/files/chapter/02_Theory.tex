@@ -3,7 +3,7 @@
 \section{Locks, Mutex}
 Im folgenden werden die Begriffe Lock und Mutex synonym verwendet.\\
 Es gibt Situation in nebenläufigen Programmen, in denen sich verschiedene 
-Routienen nicht gleichzeitig in bestimmten Bereichen aufhalten dürfen.\\
+Routinen nicht gleichzeitig in bestimmten Bereichen aufhalten dürfen.\\
 Locks gehören zu den am weitesten verbreiteten Mechanismen um solche kritische 
 Bereiche in einem Programm zu schützen \cite{zhou}.
 Möchte ein Routine $R_1$ nun in einen Bereich 
@@ -82,11 +82,11 @@ Routine $R_j$ beansprucht wird. In diesem Beispiel wartet nun $R_1$
 darauf, dass das Lock $x$ freigegeben wird und $R_2$ wartet darauf, dass Lock 
 $y$ freigegeben wird. Da nun alle Routinen warten müssen, bis ein Lock freigegeben 
 wird, allerdings keine der Routinen weiter laufen kann um ein Lock zu öffnen, 
-kommt es zum Stillstand. Dieser Zustand wird als zyklicher Deadlock bezeichnet.
+kommt es zum Stillstand. Dieser Zustand wird als zyklischer Deadlock bezeichnet.
 \subsection{Deadlock durch doppeltes Locking}\label{Kap::Theo:DoubleLocking}
 Eine andere Situation, bei der ein Deadlock entstehen kann tritt auf, wenn 
 eine Routine das selbe Lock mehrfach beansprucht, ohne es zwischendurch wieder 
-frei zu geben. Dies ist sogar möglich, wenn in dem Programm zu diesem Zieitpukt
+frei zu geben. Dies ist sogar möglich, wenn in dem Programm zu diesem Zeitpunkt
 nur eine Routine aktiv ist. Ein Beispiel dafür gibt der folgende Programmablauf:
 \begin{table}[H]
     \centering
@@ -202,7 +202,7 @@ so müssen beide diese Mutexe Reader-Locks sein. Sind sie es nicht, handelt es
 sich um Gate-Locks, und der entsprechende Pfad kann somit nicht zu einem 
 Deadlock führen. Wenn diese vier Formeln erfüllt sind, handelt es sich um eine 
 gültige Kette.\\
-Ein potentielles Deadlock ergibt sich nun, wenn diese Kette einen Kreis 
+Ein potentielles Deadlock ergibt sich nun, wenn diese Kette einen Zyklus 
 bildet, wenn als 
 \begin{align}
   &mu_n \in hs_{1} 
@@ -222,7 +222,7 @@ verschiedenen Routinen nicht explizit gespeichert werden. Ein weiterer Vorteil
 besteht darin, dass bei der Erkennung von Deadlocks mit Lock-Bäumen Situationen,
 die auf Grund von Gate-Locks nicht zu Deadlocks führen können, automatisch nicht
 als Deadlock erkannt werden, während es bei Lock-Graphen in solchen Fällen ohne 
-zusätzliche Tests zu falschen Detektionen kommt.  
+zusätzliche Tests zu falschen Meldungen kommt.  
 
 \subsection{Doppeltes Locking}
 Doppeltes Locking, wie in Kapitel \ref{Kap::Theo:DoubleLocking} beschrieben,
@@ -234,5 +234,64 @@ Währen dem (R-)(Try-)Lock Vorgang, noch bevor es zu der eigentlichen Beanspruch
 kommt, wird überprüft, ob das Lock in der selben Routine bereits gehalten 
 wird, ohne dass es sich bei beiden Operationen um Reader-Locks handelt. In diesem 
 Fall kommt es zu einem Deadlock.
+\section{UNDEAD}
+UNDEAD \cite{zhou} ist ein Algorithmus zur Detektion tatsächlicher und 
+potentieller Deadlocks. Zusätzlich versucht er potentielle Deadlocks 
+in weiteren Durchläufen zu verhindern. Da sich dieses Projekt aber nur mit der 
+Detektion von Deadlocks befasst, soll darauf nicht weiter eingegangen werden.\\\\ 
+UNDEAD implementiert drop-in-Replacements für Locks mit Lock, TryLock und Unlock
+Operationen, mit denen nach potentiellen oder tatsächlichen Deadlocks gesucht 
+werden soll.\\
+Die Detektion in UNDEAD läuft in drei Phasen ab. Diese sind die Logging-Phase, 
+die periodische Detektion und die abschließende Detektion.
+\subsection{Logging-Phase}
+Die Logging-Phase läuft während dem Ablauf des eigentlichen Programms und sammelt
+Informationen, die zur Erkennung von potentiellen Deadlocks notwendig sind. 
+Zusätzlich sammelt es Call-Stacks für Lock-Operationen. Aufgezeichnete 
+Dependencies in einer Routine werden für jede Routine in einer separaten 
+Hashtabelle gespeichert, um gleichzeitigen Zugriff mehrerer Routinen auf solche 
+Strukturen zu verhin
+dern. Als Schlüssel für die Tabelle wird dabei der XOr 
+Wert der Speicheradressen zweier Locks verwendet. Wenn z.B. das Lock $l_1$ 
+von den Locks $\{l_2, l_3\}$ abhängt, wird der XOr Wert der Speicheradressen der 
+beiden innersten Locks (hier z.B. $l_1$ und $l_2$) als Schlüssel verhindert, um 
+Konflikte zwischen den verschiedenen Schlüsseln zu verhindern.\\\\
+UNDEAD versucht die Menge der gesammelten Daten so weit wie möglich zu reduzieren.
+Dies bedeutet, dass keine Call-Stacks für single-Level Locks (Locks, die von 
+keinen anderen Locks abhängen) gespeichert werde.
+Außerdem werden, wenn in dem Programm momentan nur eine Routine Läuft keine 
+Informationen gespeichert. Außerdem versucht UNDEAD, mehrfach auftretende
+Dependencies nicht mehrfach zu speichern, und in diesem Fall auch die Call-Stack
+Informationen nicht mehrfach abzufragen.
+\subsection{Periodische Detektion}
+Die periodische Detektion wird verwendet, um Deadlocks bereits während dem 
+Ablauf des Programms zu erkennen. Dazu wird in regelmäßigen, zeitlichen 
+Abständen eine Routinen für die Detektion gestartet. Jede Routine speichert eine 
+aktuelle Dependency, also diejenige Dependency, die zuletzt erkannt wurde.\\
+Wenn die periodische Routine gestartet wird, macht der Detektor einen Snapshot
+dieser aktuellen Dependencies und sucht in diesen nach Zyklen, wie in 
+\ref{Kap::Theo:LockTree} beschrieben. Wird ein solcher Zyklus gefunden, wird 
+überprüft, ob sich die Menge der aktuellen Dependencies seit dem start der 
+periodischen Detektion geändert hat. Ist dies der Fall, so geht UNDEAD davon aus,
+dass es sich nur um ein potentielles Deadlock handelt, welches aber nicht 
+aufgetreten ist. In diesem Fall wird das Programm normal weiter ausgeführt.
+Andernfalls geht UNDEAD davon aus, das ein tatsächliches Deadlock aufgetreten 
+ist. Tritt dieser Fall auf, wird die 
+abschließende Detektion (Kap. \ref{Kap::UNDEAD:Abschließende}) gestartet 
+und das Programm im Anschluss abgebrochen. 
+\subsection{Abschließende Detektion} \label{Kap::UNDEAD:Abschließende}
+Die abschließende Detektion wird ausgeführt, nachdem das eigentliche Programm
+abgeschlossen wurde. Die Detektion basiert dabei auf dem iGoodLock Methode 
+zur Detektion von Deadlocks, basierend aud DeadlockFuzzer \cite{Joshi} und 
+MagicFuzzer \cite{Cai}. Für die Detektion sucht UNDEAD nach Zyklen wie in 
+\ref{Kap::Theo:LockTree} (\eqref{For::Theo:LockTree.a} - \eqref{For::Theo:LockTree.d})
+beschrieben. Dazu sucht es nach Dependency-Ketten 
+durch Betrachtung aller möglichen Permutationen von Dependencies in zwei Routine, dann 
+in drei, usw. Es nutzt dabei 
+eine Tiefensuche, um diese Ketten iterativ zu durchsuchen. Wenn eine solche Kette 
+gefunden wurde wird überprüft, ob sie einen Zyklus bildet (\ref{Kap::Theo:LockTree} 
+\eqref{For::Implementation:Periodical.e} - \eqref{For::Implementation:Periodical.f}).
+Ein solcher Zyklus deutet auf einen potentiellen Deadlock hin, was dazu 
+führt, dass UNDEAD eine Information ausgibt.
 
 
