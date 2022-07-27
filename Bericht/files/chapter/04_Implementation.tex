@@ -134,7 +134,7 @@ benötigt werden. Es handelt sich dabei um die folgenden Informationen:
    dependencyMap dazu da, um zu verhindern, dass Informationen, die
    bereits bekannt sind, mehrfach gespeichert werden. 
 \end{itemize}
-\section{(R)-Lock, (R)-TryLock, (R)-Unlock}
+\section{(R-)Lock, (R-)TryLock, (R-)Unlock}
 Im Folgenden sollen die Implementierungen der verschiedenen, auf den Mutexen
 implementierten Operationen beschrieben werden.\\\\ 
 Sind alle Teile des Detektors deaktiviert, werden nur die entsprechenden 
@@ -146,7 +146,8 @@ Bei dieser Sammlung werden die Datenstrukturen,
 welche in \ref{Kap::Implementation:Datastructures} beschrieben wurden, verändert
 oder neu erzeugt.\\
 Diese Vorgänge sollen im Folgenden beschrieben werden.
-\subsection{(R)-Lock}
+\subsection{(R-)Lock}
+(R)-Lock wird verwendet, um die Locks zu beanspruchen.\\
 Das Locking von RW-Mutexes unterscheidet sich von dem Locking der Mutexe nur
 dadurch, das isRLock in dem Mutex entsprechend gesetzt wird, und das 
 Locking des eigentlichen sync.(RW)Locks entsprechend angepasst wird. Die 
@@ -155,10 +156,6 @@ wird, ist die selbe.\\\\
 Zuerst wird überprüft, ob das Lock sowie der Detektor bereits initialisiert 
 wurde. Ist der Mutex nicht über $NewLock()$ initialisiert worden, wird das 
 Programm mit einer Fehlermeldung abgebrochen. \\
-Anschließend wird das eigentliche Locking des sync.Mutex über ein defer-Sstatement
-vorbereitet. Dabei wird darauf geachtet, ob es sich um ein RWMutex
-oder ein Mutex handelt, und wenn es sich um din RWMutex handelt, ob es eine 
-R-Lock-Operation ist.\\
 Anschließend wird überprüft, ob für für die entsprechende Routine bereits ein 
 Lock-Baum existiert, die Routine also bereits initialisiert worden ist. 
 Ist dies nicht der Fall wird die Routine initialisiert und damit ein leere Baum 
@@ -199,7 +196,10 @@ gerade dem zu lockenden Mutex und \texttt{holdingSet} dem momentanen \texttt{hol
 der Routine, also der Liste aller Mutexe, die von der Routine im Moment gehalten 
 werden.\\
 Sowohl bei Single-Level-Locks als auch bei Locks, welche zu Dependencies führen
-wird das Lock im Anschluss in das \texttt{holdingSet} der Routine eingefügt.
+wird das Lock im Anschluss in das \texttt{holdingSet} der Routine eingefügt.\\\\
+Sobald die Aktualisierung der Datenstrukturen abgeschlossen wurde wird die 
+eigentliche Beanspruchung des Locks ausgeführt.
+
 \subsection{(R)-TryLock}
 Bei einer Try-Lock Operation wird ein Lock nur beansprucht, wenn es im Moment 
 der Operation beansprucht werden kann, das Lock also nicht bereits von einer Routine 
@@ -262,7 +262,8 @@ befindet.
 Die abschließende Detektion wird am Ende des Programs durchgeführt um 
 potenzielle Deadlock zu finden, auch wenn diese in dem Durchlauf nicht 
 tatsächlich aufgetreten sind. Sie muss vom Nutzer manuell in seinem Code 
-gestartet werden. Sie wird in diesem Fall nur ausgeführt, wenn sie nicht 
+gestartet werden, nachdem die Ausführung des eigentlichen Programms abgeschlossen 
+wurde.. Sie wird in diesem Fall nur ausgeführt, wenn sie nicht 
 deaktiviert ist und
  die Anzahl der Routinen, die in dem Programm vorkamen,
 sowie die Anzahl der einzigartigen Dependencies mindestens zwei ist.\\

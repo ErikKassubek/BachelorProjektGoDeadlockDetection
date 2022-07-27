@@ -1,3 +1,4 @@
+\chapter{Theoretischer Hintergrund}
 \section{Locks, Mutex}
 Im Folgenden werden die Begriffe Lock und Mutex synonym verwendet.\\
 Es gibt Situation in nebenläufigen Programmen, in denen sich verschiedene 
@@ -159,7 +160,7 @@ seine eigenen Abhängigkeiten. Dies bedeutet, dass der Lock-Baum $B_i$ der
 Routine $R_i$ genau dann die Kante $x\to y$ besitzt, wenn in Routine $R$ das 
 Lock $y$ beansprucht wird, während in das Lock $x$ in $R_i$ bereits gehalten wird. 
 Mathematisch ausgedrückt ist ein Lock-Baum $B_i = (L_i, E_i)$ für Routine $i$ also ein 
-Baum, wobei $L_i$ die Menge aller in der Routine vorkommenden Locks ist, und 
+Graph, wobei $L_i$ die Menge aller in der Routine vorkommenden Locks ist, und 
 die Menge der Kanten $E_i$ über
 \begin{align*}
     (l_1, l_2) \in E_i \Leftrightarrow \exists t_1, t_3\ \nexists t_2\ ((t_1 < t_2 < t_3) \land acq_i(l_1)[t_1] \land rel_i(l_1)[t_2] \land  acq_i(l_2)[t_3])
@@ -220,7 +221,47 @@ bildet, wenn als
   \label{For::Implementation:Periodical.f}
 \end{align}
 gilt.\\\\
-Diese Bäume haben mehrere Vorteile gegenüber Lock-Graphen. Da jede Routine ihre 
+Man betrachte das folgende Beispiel:
+\begin{table}[H]
+    \centering
+    \begin{tabular}{ccc}
+       & $R_1$        & $R_2$          \\
+    1. & $acq_{1}(mu_1)$ &                \\
+    2. & $acq_{1}(mu_2)$ &                \\
+    3. & $acq_{1}(mu_3)$ &                \\
+    4. & $rel_{1}(mu_3)$ &                \\
+    5. & $rel_{1}(mu_2)$ &                \\
+    6. & $rel_{1}(mu_1)$ &                \\
+    7. &              & $acq_{2}(mu_3)$ \\
+    8. &              & $acq_{2}(mu_2)$ \\
+   10. &              & $rel_{2}(mu_2)$ \\
+   11. &              & $rel_{2}(mu_3)$ \\
+   \end{tabular}
+\end{table}
+Dabei gibt sich die Menge der Dependencies für $R1$ zu 
+\begin{align*}
+    B_1 = \{(mu_2, \{mu_1\}), (mu_3, \{mu_1, mu_2\})\}
+\end{align*}
+und für $R_2$ zu 
+\begin{align*}
+    B_2 = \{(mu_2, \{mu_3\}\})\},
+\end{align*} wobei eine Dependency immer als Tuple der Form $(mu, hs)$ angegeben 
+wird. Dies lässt sich folgendermaßen graphisch darstellen:
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{img/trees_example.png}
+    \caption{Graphische Darstellung der Lock-Bäume aus dem Beispiel. Die Knoten 
+    entsprechen dabei Locks. In Rot ist der Lock-Baum von $R_1$, in grün 
+    der Lock-Baum für $R_2$ gegeben. Durchgezogene Pfeile stellen die Dependencies
+    dar, gestrichelte Pfeile werden zur Verdeutlichung des Zyklus verwendet.}
+\end{figure}
+Die Kanten entsprechen dabei immer Teilen der Dependencies, wobei es immer 
+eine Kante von \texttt{mu} zu jedem der Locks in \texttt{hs} gibt. Verbindet man nun 
+gleiche Locks zwischen den einzelnen Bäumen (im Bild mit gestrichelten Pfeilen),
+besitzt der entstehende Graph einen Zyklus zwischen $mu_2$ und $mu_3$. 
+Solch ein Zyklus indiziert einen potentiellen Deadlock.\\\\
+Diese Verwendung von Lock-Bäumen hat mehrere Vorteile gegenüber Lock-Graphen. 
+Da jede Routine ihre 
 eigene Datenstruktur hat, wird verhindert, dass es durch 
 gleichzeitigen Zugriff verschiedener Routinen auf die selbe Datenstruktur zu 
 Problemen kommt. Zudem muss die Zugehörigkeit der Abhängigkeiten zu 
@@ -245,7 +286,7 @@ UNDEAD \cite{zhou} ist ein Algorithmus zur Detektion tatsächlicher und
 potenzieller Deadlocks. Zusätzlich versucht er potenzielle Deadlocks 
 in weiteren Durchläufen zu verhindern. Da sich dieses Projekt aber nur mit der 
 Detektion von Deadlocks befasst, soll darauf nicht weiter eingegangen werden.\\\\ 
-UNDEAD implementiert drop-in-Replacements für Locks mit Lock, TryLock und Unlock
+UNDEAD implementiert Drop-in-Replacements für Locks mit Lock, TryLock und Unlock
 Operationen, mit denen nach potenziellen oder tatsächlichen Deadlocks gesucht 
 werden soll.\\
 Die Detektion in UNDEAD läuft in drei Phasen ab. Diese sind die Logging-Phase, 
