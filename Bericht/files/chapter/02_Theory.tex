@@ -1,15 +1,13 @@
-\chapter{Theoretischer Hintergrund}
-
 \section{Locks, Mutex}
-Im folgenden werden die Begriffe Lock und Mutex synonym verwendet.\\
+Im Folgenden werden die Begriffe Lock und Mutex synonym verwendet.\\
 Es gibt Situation in nebenläufigen Programmen, in denen sich verschiedene 
 Routinen nicht gleichzeitig in bestimmten Bereichen aufhalten dürfen.\\
-Locks gehören zu den am weitesten verbreiteten Mechanismen um solche kritische 
+Locks gehören zu den am weitesten verbreiteten Mechanismen, um solche kritische 
 Bereiche in einem Programm zu schützen \cite{zhou}.
 Möchte ein Routine $R_1$ nun in einen Bereich 
 eintreten, der durch ein Lock, welches bereits von einer anderen Routine $R_0$ 
 gehalten wird, geschützt ist, muss sie so lange vor dem Lock warten, bis das Lock 
-von $R_0$ wieder frei gegeben wird.
+von $R_0$ wieder freigegeben wird.
 \subsection{Operationen}
 Auf Locks sind in der Regel die drei folgenden Operationen definiert.
 \begin{itemize}
@@ -30,9 +28,9 @@ Auf Locks sind in der Regel die drei folgenden Operationen definiert.
 \subsection{RW-Locks}
 Neben den allgemeinen Locks gibt es noch Reader-Writer Locks. Diese haben im 
 Vergleich zu den allgemeinen Locks zwei Lock und TryLock Operation, R-Lock und 
-W-Lock (analog für Try-Lock). W-Lock, im folgenden einfach Lock genant funktioniert 
+W-Lock (analog für TryLock). W-Lock, im folgenden einfach Lock genannt funktioniert 
 identisch zu Lock in den allgemeinen Locks. Bei R-Locks hingegen ist es, anders 
-als bei Lock, möglich dass das Lock gleichzeitig von verschiedenen Routine gehalten wird
+als bei Lock, möglich, dass das Lock gleichzeitig von verschiedenen Routine gehalten wird
 (oder mehrfach von der selben Routine), solange alle diese Beanspruchungen durch 
 R-Lock erfolgt sind. Es ist nicht möglich ein Lock gleichzeitig durch R-Lock und 
 Lock zu schließen.
@@ -40,7 +38,7 @@ Lock zu schließen.
 \section{Deadlock} \label{Kap::Theo:Deadlocks}
 \subsection{Zyklischer Deadlock}
 Ein Deadlock ist ein Zustand in einem nebenläufigen Programm, also einem 
-Programm, in dem mehrere Routinen gleichzeitig ausgeführt werden, wobei alle 
+Programm, in dem mehrere Routinen nebenläufig ausgeführt werden, wobei alle 
 laufenden Routinen zyklisch auf die Freigabe von Ressourcen warten.
 Ein solcher Deadlock kann nun entstehen, wenn all Routinen vor einem Lock warten 
 müssen, wobei die Locks immer von einer anderen Routine gehalten werden.\\
@@ -62,7 +60,7 @@ beansprucht und $rel_i(l)$, dass $l$ von $R_i$ wieder freigegeben wird.
     8. &              & $rel_{2}(x)$
     \end{tabular}
 \end{table}
-Da $R_1$ und $R_2$ gleichzeitig ablaufen ist es möglich, dass sich die 
+Da $R_1$ und $R_2$ nebenläufig ablaufen ist es möglich, dass sich die 
 Reihenfolge der einzelnen Operationen zwischen den Routinen ändert (die Reihenfolge
 innerhalb einer Routine ist immer gleich). Damit ist für das Programm, welches 
 zu dem obigen Ablauf geführt hat, auch folgender Ablauf möglich. 
@@ -81,12 +79,12 @@ bzw. dass die Routine $R_i$ vor dem Lock halten muss, da das Lock bereits von
 Routine $R_j$ beansprucht wird. In diesem Beispiel wartet nun $R_1$ 
 darauf, dass das Lock $x$ freigegeben wird und $R_2$ wartet darauf, dass Lock 
 $y$ freigegeben wird. Da nun alle Routinen warten müssen, bis ein Lock freigegeben 
-wird, allerdings keine der Routinen weiter laufen kann um ein Lock zu öffnen, 
+wird, allerdings keine der Routinen weiter laufen kann, um ein Lock zu öffnen, 
 kommt es zum Stillstand. Dieser Zustand wird als zyklischer Deadlock bezeichnet.
 \subsection{Deadlock durch doppeltes Locking}\label{Kap::Theo:DoubleLocking}
 Eine andere Situation, bei der ein Deadlock entstehen kann tritt auf, wenn 
 eine Routine das selbe Lock mehrfach beansprucht, ohne es zwischendurch wieder 
-frei zu geben. Dies ist sogar möglich, wenn in dem Programm zu diesem Zeitpunkt
+freizugeben. Dies ist sogar möglich, wenn in dem Programm zu diesem Zeitpunkt
 nur eine Routine aktiv ist. Ein Beispiel dafür gibt der folgende Programmablauf:
 \begin{table}[H]
     \centering
@@ -97,29 +95,30 @@ nur eine Routine aktiv ist. Ein Beispiel dafür gibt der folgende Programmablauf
     \end{tabular}
 \end{table}
 Die Routine muss dabei vor der zweiten Beanspruchung warten,
-ohne dass es es die Möglichkeit gibt, dass die Routine irgendwann weiter laufen wird.
+ohne dass es die Möglichkeit gibt, dass die Routine irgendwann weiter laufen wird.
 Solch ein Deadlock wird als doppeltes Locking bezeichnet.\\
 \section{Deadlocks-Detection}
 Deadlocks in Programmen sind Fehler, die oft den vollständige Abbruch eines 
 Programmes zu Folge haben, wenn keine zusätzliche Logik zur Erkennung und Auflösung von 
 Deadlocks implementiert ist. Aus diesem Grund möchte man bereits bei der 
-Implementierung eines Programmes verhindern, dass ein solcher Deadlock auftreten 
+Implementierung eines Programms verhindern, dass ein solcher Deadlock auftreten 
 kann. Unglücklicherweise kann es ohne zusätzliche Hilfsmittel schwierig sein, 
 einen solchen Deadlock zu erkennen, da das Auftreten eines Deadlock von dem 
 genauen zeitlichen Ablauf der verschiedenen Routinen abhängt.\\
 Um dennoch Deadlocks 
-erkennen zu können, können Lock-Graphen oder Lock-Bäume verwendet werden, die 
+erkennen zu können, können Lock-Graphen oder Lock-Bäume verwendet werden, um 
+potenzielle Deadlocks zu erkennen. 
 \subsection{Lock-Graphen}
 Ein Lock-Graph ist ein gerichteter Graph $G = (L, E)$. Dabei ist $L$ die Menge 
 aller Locks. $E \subseteq L \times L$ ist definiert als $(l_1, l_2) \in E$ genau 
-dann wenn es eine Routine $R$ gibt, auf welche $acq(l_2)$ ausgeführt wird, während sie 
+dann, wenn es eine Routine $R$ gibt, auf welche $acq(l_2)$ ausgeführt wird, während sie 
 bereits das Lock $l_1$ hält \cite{bensalem}. Mathematisch ausgedrückt gilt also 
 \begin{align*}
-    (l_1, l_2) \in E \Leftrightarrow \exists t_1, t_3\ \nexists t_2\ \exists i\ ((t_1 < t_2 < t_3) \land aqr_i(l_1)[t_1] \land rel_i(l_1)[t_2] \land  aqr_i(l_2)[t_3])
+    (l_1, l_2) \in E \Leftrightarrow \exists t_1, t_3\ \nexists t_2\ \exists i\ ((t_1 < t_2 < t_3) \land acq_i(l_1)[t_1] \land rel_i(l_1)[t_2] \land  acq_i(l_2)[t_3])
 \end{align*}
-wobei $aqr_i(l_1)[t_i]$ bedeutet, dass $aqr(l_1)$ zum Zeitpunkt $t_i$ auf Routine 
+wobei $acq_i(l_1)[t_i]$ bedeutet, dass $acq(l_1)$ zum Zeitpunkt $t_i$ auf Routine 
 $i$ ausgeführt wird und equivalent für $rel_i(l_1)[t_i]$.\\
-Ein Deadlock kann nun auftreten wenn es innerhalb dieses Graphen einen Kreis 
+Ein Deadlock kann nun auftreten, wenn es innerhalb dieses Graphen einen Kreis 
 gibt. Um zu verhindern, dass ein False-Positive dadurch ausgelöst wird, dass 
 alle Kanten in einem solchen Kreis aus der selben Routine kommen (wodurch kein 
 Deadlock entstehen kann), können die Kanten noch zusätzlich mit einem Label 
@@ -127,9 +126,9 @@ versehen werden, welches die Routine identifiziert, durch welche die Kante in
 den Graphen eingefügt wurde. Bei dem Testen nach Zyklen muss nun beachtet 
 werden, dass nicht alle Kanten in dem Kreis das selbe Label haben 
 \cite{bensalem}. Es sei zusätzlich noch gesagt, dass ein Zyklus in einem 
-Lockgraphen nicht immer auf ein potentielles Deadlock hinweist. Ein solcher 
+Lockgraphen nicht immer auf ein potenzielles Deadlock hinweist. Ein solcher 
 Fall, bei dem die Detektion von Zyklen zu einer fälschlichen Detektion 
-führt sind sogenannt Gate-Locks. Diese treten z.B. in folgender Situation
+führt, sind sogenannt Gate-Locks. Diese treten z.B. in folgender Situation
 auf:
 \begin{table}[H]
      \centering
@@ -149,42 +148,49 @@ auf:
     12. &              & $rel_{2}(z)$
     \end{tabular}
 \end{table}
-In diesem Fall bilden die Locks $x$ und $y$ in dem Lockgraphen einen Zyklus. 
+In diesem Fall bilden die Locks $x$ und $y$ in dem Lock-Graphen einen Zyklus. 
 Allerdings verhindert das Lock $z$, dass in diesem Fall ein tatsächliches 
 Deadlock auftreten kann, da sich immer nur eine der beiden Routinen 
 in dem Bereich mit den Locks $x$ und $y$ aufhalten kann.
 
 \subsection{Lock-Bäume} \label{Kap::Theo:LockTree}
 Anders als bei Lock-Graphen, speichert bei Lock-Bäumen jede Routine  
-seine eigenen Abhängigkeiten. Dies bedeutet, dass der Lock-Baum $b$ der 
-Routine $R$ genau dann die Kante $x\to y$ besitzt, wenn in Routine $R$ das 
-Lock $y$ beansprucht wird, während in das Lock $x$ in $R$ bereits gehalten wird.\\
+seine eigenen Abhängigkeiten. Dies bedeutet, dass der Lock-Baum $B_i$ der 
+Routine $R_i$ genau dann die Kante $x\to y$ besitzt, wenn in Routine $R$ das 
+Lock $y$ beansprucht wird, während in das Lock $x$ in $R_i$ bereits gehalten wird. 
+Mathematisch ausgedrückt ist ein Lock-Baum $B_i = (L_i, E_i)$ für Routine $i$ also ein 
+Baum, wobei $L_i$ die Menge aller in der Routine vorkommenden Locks ist, und 
+die Menge der Kanten $E_i$ über
+\begin{align*}
+    (l_1, l_2) \in E_i \Leftrightarrow \exists t_1, t_3\ \nexists t_2\ ((t_1 < t_2 < t_3) \land acq_i(l_1)[t_1] \land rel_i(l_1)[t_2] \land  acq_i(l_2)[t_3])
+\end{align*}
+gegeben ist.\\
 Im folgenden, wird ein Lock-Baum als eine Menge von Dependencies betrachtet. 
-Eine solche Dependency besteht aus einem Lock $mu$ und einer Menge von Locks $hs$
-($\glqq$holdingSet$\grqq$),
-von denen $mu$ anhängt, für die es also eine Kante $x \to mu$ mit $x \in hs$ gibt.\\
-Ein potentielles Deadlock liegt nun vor, wenn es in der Menge aller Dependencies
+Eine solche Dependency besteht aus einem Lock \texttt{mu} und einer Menge von Locks \texttt{hs}
+(\texttt{holdingSet}),
+von denen \texttt{mu} anhängt, für die es also eine Kante $x \to mu$ mit $x \in hs$ gibt.\\
+Ein potenzielles Deadlock liegt nun vor, wenn es in der Menge aller Dependencies
 eine gültige, zyklische Kette gibt.\\
 Ein Pfad mit $n$
 Elementen ist eine gültige Kette, wenn die folgenden Eigenschaften gelten:
 \begin{align}
-  &\forall i, j \in \{1,...,n\}: \lnot (i = j) \rightarrow \lnot (dep_i = dep_j) \tag{\ref{Kap::Theo:LockTree}.a}
+  &\forall\ i, j \in \{1,...,n\}\ (dep_i = dep_j) \rightarrow ot (i = j) \tag{\ref{Kap::Theo:LockTree}.a}
   \label{For::Theo:LockTree.a}\\
-  &\forall i \in \{1,...,n\}: mu_i \in hs_{i+1} 
+  &\forall\ i \in \{1,...,n\}\ mu_i \in hs_{i+1} 
   \tag{\ref{Kap::Theo:LockTree}.b}
   \label{For::Theo:LockTree.b}\\
-  &\forall i \in \{1,...,n\}: read(mu_i) \rightarrow 
-  (\forall\ mu \in hs_{i+1}:(mu = mu_i) \to \lnot read(mu))
+  &\forall\ i \in \{1,...,n\}\ read(mu_i) \rightarrow 
+  (\forall\ mu \in hs_{i+1}\ (mu = mu_i) \to \lnot read(mu))
   \tag{\ref{Kap::Theo:LockTree}.c}
   \label{For::Theo:LockTree.c}\\
-  &\forall i, j \in \{1,...,n\}: \lnot (i = j) \rightarrow 
-  (\exists\ l1 \in hs_i\ \exists\ l2 \in hs_j ((l1 = l2) \rightarrow 
-  (read(l1) \land read(l2)))) 
+  &\makecell{\forall\ i, j \in \{1,...,n\}\ \lnot (i = j) \rightarrow 
+  (\exists\ mu_1 \in hs_i\ \exists\ mu_2 \in hs_j ((mu_1 = mu_2) \rightarrow\\
+  (read(mu_1) \land read(mu_2))))\phantom{123123123122131231231231223123}}
   \tag{\ref{Kap::Theo:LockTree}.d}
   \label{For::Theo:LockTree.d}
 \end{align}
 Dabei bezeichnet $mu_i$ den Mutex und $hs_i$ das holdingSet der $i$-ten 
-Dependency in der Kette. $read(mu)$ bedeutet, dass das Locking von $mu$, welches 
+Dependency $dep_i$ in der Kette. $read(mu)$ bedeutet, dass das Locking von $mu$, welches 
 in der Dependency abgebildet ist durch ein R-Lock zustande gekommen ist.\\
 \eqref{For::Theo:LockTree.a} stellt sicher, dass die selbe 
 Dependency nicht mehr als ein mal in der Kette auftauchen kann.  
@@ -197,30 +203,30 @@ beides Reader-Locks sind. Dass solche Pfade ausgeschlossen werden wird durch
 \eqref{For::Theo:LockTree.c} sichergestellt. Die letzte Formel 
 \eqref{For::Theo:LockTree.d} beschäftigt sich mit Gate-Locks. 
 Sie besagt, dass wenn es einen Mutex gibt, 
-der in den HoldingSets zweier verschiedener Dependencies in dem Pfad vor kommt, 
+der in den HoldingSets zweier verschiedener Dependencies in dem Pfad vorkommt, 
 so müssen beide diese Mutexe Reader-Locks sein. Sind sie es nicht, handelt es 
 sich um Gate-Locks, und der entsprechende Pfad kann somit nicht zu einem 
 Deadlock führen. Wenn diese vier Formeln erfüllt sind, handelt es sich um eine 
 gültige Kette.\\
-Ein potentielles Deadlock ergibt sich nun, wenn diese Kette einen Zyklus 
+Ein potenzielles Deadlock ergibt sich nun, wenn diese Kette einen Zyklus 
 bildet, wenn als 
 \begin{align}
   &mu_n \in hs_{1} 
-  \tag{\ref{Kap::Implementation:Periodical}.e}
+  \tag{\ref{Kap::Theo:LockTree}.e}
   \label{For::Implementation:Periodical.e}\\
   &read(mu_n) \rightarrow 
   (\forall\ mu \in hs_{1}: (mu = mu_n) \to \lnot read(mu))
-  \tag{\ref{Kap::Implementation:Periodical}.f}
+  \tag{\ref{Kap::Theo:LockTree}.f}
   \label{For::Implementation:Periodical.f}
 \end{align}
 gilt.\\\\
-Diese Bäume haben mehrere Vorteile gegenüber Lock-Graphen. Da jede Routine seine 
+Diese Bäume haben mehrere Vorteile gegenüber Lock-Graphen. Da jede Routine ihre 
 eigene Datenstruktur hat, wird verhindert, dass es durch 
 gleichzeitigen Zugriff verschiedener Routinen auf die selbe Datenstruktur zu 
 Problemen kommt. Zudem muss die Zugehörigkeit der Abhängigkeiten zu 
 verschiedenen Routinen nicht explizit gespeichert werden. Ein weiterer Vorteil 
 besteht darin, dass bei der Erkennung von Deadlocks mit Lock-Bäumen Situationen,
-die auf Grund von Gate-Locks nicht zu Deadlocks führen können, automatisch nicht
+die aufgrund von Gate-Locks nicht zu Deadlocks führen können, automatisch nicht
 als Deadlock erkannt werden, während es bei Lock-Graphen in solchen Fällen ohne 
 zusätzliche Tests zu falschen Meldungen kommt.  
 
@@ -236,17 +242,17 @@ wird, ohne dass es sich bei beiden Operationen um Reader-Locks handelt. In diese
 Fall kommt es zu einem Deadlock.
 \section{UNDEAD}
 UNDEAD \cite{zhou} ist ein Algorithmus zur Detektion tatsächlicher und 
-potentieller Deadlocks. Zusätzlich versucht er potentielle Deadlocks 
+potenzieller Deadlocks. Zusätzlich versucht er potenzielle Deadlocks 
 in weiteren Durchläufen zu verhindern. Da sich dieses Projekt aber nur mit der 
 Detektion von Deadlocks befasst, soll darauf nicht weiter eingegangen werden.\\\\ 
 UNDEAD implementiert drop-in-Replacements für Locks mit Lock, TryLock und Unlock
-Operationen, mit denen nach potentiellen oder tatsächlichen Deadlocks gesucht 
+Operationen, mit denen nach potenziellen oder tatsächlichen Deadlocks gesucht 
 werden soll.\\
 Die Detektion in UNDEAD läuft in drei Phasen ab. Diese sind die Logging-Phase, 
 die periodische Detektion und die abschließende Detektion.
 \subsection{Logging-Phase}
 Die Logging-Phase läuft während dem Ablauf des eigentlichen Programms und sammelt
-Informationen, die zur Erkennung von potentiellen Deadlocks notwendig sind. 
+Informationen, die zur Erkennung von potenziellen Deadlocks notwendig sind. 
 Zusätzlich sammelt es Call-Stacks für Lock-Operationen. Aufgezeichnete 
 Dependencies in einer Routine werden für jede Routine in einer separaten 
 Hashtabelle gespeichert, um gleichzeitigen Zugriff mehrerer Routinen auf solche 
@@ -255,25 +261,26 @@ dern. Als Schlüssel für die Tabelle wird dabei der XOr
 Wert der Speicheradressen zweier Locks verwendet. Wenn z.B. das Lock $l_1$ 
 von den Locks $\{l_2, l_3\}$ abhängt, wird der XOr Wert der Speicheradressen der 
 beiden innersten Locks (hier z.B. $l_1$ und $l_2$) als Schlüssel verhindert, um 
-Konflikte zwischen den verschiedenen Schlüsseln zu verhindern.\\\\
+Konflikte zwischen den verschiedenen Schlüsseln zu verhindern. Diese 
+Hashtabellen bilden damit die Implementierung der Lock-Bäume.\\\\
 UNDEAD versucht die Menge der gesammelten Daten so weit wie möglich zu reduzieren.
 Dies bedeutet, dass keine Call-Stacks für single-Level Locks (Locks, die von 
 keinen anderen Locks abhängen) gespeichert werde.
-Außerdem werden, wenn in dem Programm momentan nur eine Routine Läuft keine 
+Außerdem werden, wenn in dem Programm momentan nur eine Routine läuft keine 
 Informationen gespeichert. Außerdem versucht UNDEAD, mehrfach auftretende
 Dependencies nicht mehrfach zu speichern, und in diesem Fall auch die Call-Stack
 Informationen nicht mehrfach abzufragen.
 \subsection{Periodische Detektion}
 Die periodische Detektion wird verwendet, um Deadlocks bereits während dem 
 Ablauf des Programms zu erkennen. Dazu wird in regelmäßigen, zeitlichen 
-Abständen eine Routinen für die Detektion gestartet. Jede Routine speichert eine 
+Abständen eine Routine für die Detektion gestartet. Jede Routine speichert eine 
 aktuelle Dependency, also diejenige Dependency, die zuletzt erkannt wurde.\\
 Wenn die periodische Routine gestartet wird, macht der Detektor einen Snapshot
 dieser aktuellen Dependencies und sucht in diesen nach Zyklen, wie in 
 \ref{Kap::Theo:LockTree} beschrieben. Wird ein solcher Zyklus gefunden, wird 
 überprüft, ob sich die Menge der aktuellen Dependencies seit dem start der 
 periodischen Detektion geändert hat. Ist dies der Fall, so geht UNDEAD davon aus,
-dass es sich nur um ein potentielles Deadlock handelt, welches aber nicht 
+dass es sich nur um ein potenzielles Deadlock handelt, welches aber nicht 
 aufgetreten ist. In diesem Fall wird das Programm normal weiter ausgeführt.
 Andernfalls geht UNDEAD davon aus, das ein tatsächliches Deadlock aufgetreten 
 ist. Tritt dieser Fall auf, wird die 
@@ -286,12 +293,12 @@ zur Detektion von Deadlocks, basierend aud DeadlockFuzzer \cite{Joshi} und
 MagicFuzzer \cite{Cai}. Für die Detektion sucht UNDEAD nach Zyklen wie in 
 \ref{Kap::Theo:LockTree} (\eqref{For::Theo:LockTree.a} - \eqref{For::Theo:LockTree.d})
 beschrieben. Dazu sucht es nach Dependency-Ketten 
-durch Betrachtung aller möglichen Permutationen von Dependencies in zwei Routine, dann 
+durch Betrachtung aller möglichen Permutationen von Dependencies in zwei Routinen, dann 
 in drei, usw. Es nutzt dabei 
 eine Tiefensuche, um diese Ketten iterativ zu durchsuchen. Wenn eine solche Kette 
-gefunden wurde wird überprüft, ob sie einen Zyklus bildet (\ref{Kap::Theo:LockTree} 
+gefunden wurde, wird überprüft, ob sie einen Zyklus bildet (\ref{Kap::Theo:LockTree} 
 \eqref{For::Implementation:Periodical.e} - \eqref{For::Implementation:Periodical.f}).
-Ein solcher Zyklus deutet auf einen potentiellen Deadlock hin, was dazu 
+Ein solcher Zyklus deutet auf einen potenziellen Deadlock hin, was dazu 
 führt, dass UNDEAD eine Information ausgibt.
 
 

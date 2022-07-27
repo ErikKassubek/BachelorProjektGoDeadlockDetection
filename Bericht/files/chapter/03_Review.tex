@@ -1,7 +1,7 @@
 \chapter{Review für go-deadlock}\label{Chap::Review:go-deadlock}
 Im folgenden soll eine Software zur Erkennung von Deadlocks analysiert werden.
 Dazu wird die Software ``sasha-s/go-deadlock`` \cite{sasha-s}, veröffentlicht 
-auf Github, betrachtet.\\
+auf GitHub, betrachtet.\\
 Dieses verwendet Drop-In Replacements für die, in Go standardmäßig 
 implementierten, sync.Mutex Locks. Diese führen sowohl das eigentliche 
 Locking aus und können, beim Durchlaufen des Programms Situationen erkennen, 
@@ -24,15 +24,14 @@ Um doppeltes Locking zu erkennen speichert das Programm ein Dictionary $cur$ mit
 allen momentan gehaltenen 
 Locks. Die Werte zu den jeweiligen Keys speichern sowohl, von welcher Go-Routine das 
 Lock momentan gehalten wird, als auch in welcher Datei und Zeile der Befehl,
-der das Locking dieses Locks zu folge hatte, zu finden ist. Wird ein Lock 
+der das Locking dieses Locks zu Folge hatte, zu finden ist. Wird ein Lock 
 wieder freigegeben, so wird der entsprechende Eintrag aus $cur$ entfernt. 
 Wird nun ein Lock neu beansprucht, überprüft 
-das Programm, ob dieses Lock mit der Routine, die das Lock beanspruchen möchte 
+das Programm, ob dieses Lock mit der Routine, die das Lock beanspruchen möchte,
 bereits in $cur$ auftaucht. Ist dies der Fall, dann nimmt das
 Programm an, dass es sich hierbei um ein mögliches Deadlock durch doppeltes Locking
 handelt und führt 
-entsprechende Schritte aus, um den Nutzer zu warnen. Wird ein Lock wieder frei
-gegeben, wird der entsprechende Eintrag aus $cur$ entfernt.
+entsprechende Schritte aus, um den Nutzer zu warnen. Wird ein Lock wieder freigegeben, wird der entsprechende Eintrag aus $cur$ entfernt.
 
 \section{Zyklisches Locking}\label{Kap::Rev:Cyclic}
 Mit dieser Methode werden mögliche Deadlocks gefunden, die dadurch entstehen,
@@ -48,7 +47,7 @@ Wird ein neues Lock $p$ beanspruchen, so wird für
 jedes Lock $b$, welches sich momentan in $cur$ befindet ein  
 neuer Eintrag $beforeAfter\{b, p\}$ in $order$ hinzugefügt. 
 Die Werte, die für jeden Key in $order$ gespeichert werden, entsprechen 
-den Information, die auch in $cur$ für die beiden Locks gespeichert wird. Allerdings 
+den Informationen, die auch in $cur$ für die beiden Locks gespeichert wird. Allerdings 
 wird auf die Speicherung der ID der erzeugenden Go-Routine verzichtet, da sie 
 nicht benötigt wird.
 Information aus $order$ werden nur entfernt, wenn $order$ eine festgelegte 
@@ -84,7 +83,7 @@ nimmt das Programm nach der festgelegten Zeit an, dass es zu einem Deadlock
 gekommen ist und gibt eine entsprechende Nachricht aus.\\
 Diese Methode kann
 durchaus nützlich sein, um über Deadlocks informiert zu werden. Allerdings führt
-sie sehr leicht zu false-positives, wenn die Abarbeitung anderer Routinen und 
+sie sehr leicht zu False-Positives, wenn die Abarbeitung anderer Routinen und 
 damit die Freigabe des Locks länger Dauer, als die festgelegte Timeout Zeit.
 Im folgenden Beispiel wird dies deutlich:
 \begin{figure}[H]
@@ -123,4 +122,4 @@ Deadlock zu erkennen. \\
 Ein Fall, bei dem es zu False Positives kommen kann, wird durch Gate-Locks
 ausgelöst. Wie bereits beschrieben ist ein auf Lock-Graphen basierender Detektor,
 und damit solch ein Detektor nicht in der Lage zu erkennen, wenn ein 
-potentielles Deadlock durch Gate-Locks unmöglich gemacht wird.
+potenzielles Deadlock durch Gate-Locks unmöglich gemacht wird.
