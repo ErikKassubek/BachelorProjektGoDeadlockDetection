@@ -37,15 +37,18 @@ zwischen Lock-Operationen in Lock-Graphen oder Lock-Bäumen, und versuchen aus
 diesen auf Deadlocks zu schließen.\\\\
 Der Bericht ist folgendermaßen aufgebaut: Zuerst wird auf den theoretischen 
 Hintergrund bezüglich Locks und Deadlocks, sowie die Erkennung von 
-potenziellen Deadlocks mit Lock-Graphen und Lock-Bäumen eingegangen. Anschließend
+potenziellen Deadlocks mit Lock-Graphen und Lock-Bäumen eingegangen. Außerdem 
+wird die Funktionsweise des UNDEAD-Algorithmus \cite{zhou} betrachtet.
+Anschließend
 wird die Funktionsweise eines Detektors für Deadlocks ``go-deadlock'' 
 \cite{sasha-s} analysiert, welcher auf Lock-Graphen basiert. Der Hauptteil 
 des Projekts beschäftigte sich mit der Entwicklung und Implementierung eines 
-auf Lock-Bäumen basierten Deadlock-Detektors für Go. Dieser basiert zum Teil 
-auf dem UNDEAD Algorithmus \cite{zhou}. Er wurde allerdings um weitere Funktionen,
+auf Lock-Bäumen basierten Deadlock-Detektors für Go. Dieser basiert 
+auf dem UNDEAD Algorithmus. Er wurde allerdings um weitere Funktionen,
 wie z.B. RW-Locks erweitert. Dessen Aufbau und Funktionsweise wird in Kapitel 
 \ref{Kap::Implementaion} beschrieben. Zum Schluss werden die beiden betrachteten 
 Detektoren bezüglich ihrer Fähigkeit potenzielle Deadlocks bzw. 
-Situationen, welche nicht zu Deadlocks führen können, korrekt zu erkennen. Außerdem 
+Situationen, welche nicht zu Deadlocks führen können, korrekt zu erkennen, verglichen.
+Außerdem 
 wird der Einfluss der Detektoren auf die Laufzeit der Programme analysiert.
 

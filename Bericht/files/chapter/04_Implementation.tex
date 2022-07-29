@@ -1,10 +1,10 @@
 \chapter{Implementierung des Deadlock-Detektors \glqq Deadlock-Go \grqq} \label{Kap::Implementaion}
-Im Folgenden soll die Funktionsweise und Implementierung eines selbst implementierten 
+Im Folgenden soll die Funktionsweise und Implementierung es selbst implementierten 
 Detektors $\glqq$Deadlock-Go$\grqq$ 
 betrachtet werden. Dieser wurde entwickelt um Ressourcen-Deadlocks in Go-Programmen
 zu erkennen und den Nutzer vor solchen zu warnen. Der Code kann in 
 \cite{implementation} gefunden werden.\\
-Der Detektor basiert zum Teil auf dem UNDEAD-Algorithmus \cite{zhou}. 
+Der Detektor basiert zu größten Teil auf dem UNDEAD-Algorithmus (s. Kap. \ref{Kap::Theo:UNDEAD}). 
 Zusätzlich wurde er um RW-Locks
 erweitert, welche in UNDEAD nicht betrachtet werden.\\
 Der Detektor implementiert dabei Lock-Bäume, mit welchen zyklisches Locking 
@@ -81,8 +81,8 @@ Dabei handelt es sich um die folgenden Informationen:
       moment gleichzeitig beansprucht ist. Ist das Lock frei, ist dieser Wert $0$.
       Bei einem Mutex kann der Wert maximal 1 werden, wenn das Lock gerade von 
       einer Routine gehalten wird. Das selbe ist wahr für RW-Mutexe, wenn diese 
-      über ein Writer-Lock gehalten werden. Werden diese allerdings von 
-      Reader-Locks gehalten, kann das selbe Lock von mehreren Locks gehalten 
+      über ein W-Lock gehalten werden. Werden diese allerdings von 
+      R-Locks gehalten, kann das selbe Lock von mehreren Routinen gehalten 
       werden.
   \item \texttt{isLockedRoutineIndex} (*map[int]int) speichert die Indices der Routinen, von 
     welchen das Lock momentan gehalten wird, sowie wie oft es gehalten wird. 
@@ -90,7 +90,7 @@ Dabei handelt es sich um die folgenden Informationen:
   \item \texttt{memoryPosition} (uintptr) speichert die Speicheradresse des 
     Mutex Objekts bei seiner Erzeugung.
   \item \texttt{isRLock} (map[int]bool) (nur für RW-Mutex) speicher, von welcher Routine 
-    der Mutex als RLock gehalten wird.
+    der Mutex als R-Lock gehalten wird.
 \end{itemize}
 Zusätzlich enthalten die (RW)-Locks noch Locks, die bei der gleichzeitigen Verwendung 
 des Locks durch R-Lock eine gleichzeitiges schreiben in maps verhindern.   
@@ -101,21 +101,21 @@ Lock Graphen. Sie enthalten die folgenden Informationen:
 \begin{itemize}
   \item \texttt{mu} (mutexInt) ist das Lock, für welches gespeichert werden soll, von 
    welchen anderen Locks mu abhängt, welche Locks also in der selben Routine 
-   bereits gehalten wurden, als mu erfolgreich beansprucht wurde.
-  \item \texttt{holdingSet} ([]mutexInt) ist die Liste der Locks, von denen mu abhängt.
-  \item \texttt{holdingCount} (int) ist die Anzahl der Locks, von denen mu abhängt,
+   bereits gehalten wurden, als \texttt{mu} erfolgreich beansprucht wurde.
+  \item \texttt{holdingSet} ([]mutexInt) ist die Liste der Locks, von denen \texttt{mu} abhängt.
+  \item \texttt{holdingCount} (int) ist die Anzahl der Locks, von denen \texttt{mu} abhängt,
    also die Anzahl der Elemente in holdingSet.
 \end{itemize}
 \subsection{Routine}
 Für jede Routine wird automatisch eine Struktur angelegt, die alle für sie 
 relevanten Informationen speichert. Diese Strukturen werden in einem 
-globalen Slice (Liste) routines gespeichert. Bei den Informationen, die von 
+globalen Slice (Liste) \texttt{routines} gespeichert. Bei den Informationen, die von 
 diesen Routinen gehalten werden handelt es 
 sich vor allem um eine Liste der Mutexe, die momentan von der Routine 
 gehalten werden, sowie die Inforationen, die für den Aufbau des Lock-Baums 
 benötigt werden. Es handelt sich dabei um die folgenden Informationen:
 \begin{itemize}
-  \item \texttt{index} (int) ist der Index der Routine in routines.
+  \item \texttt{index} (int) ist der Index der Routine in \texttt{routines}.
   \item \texttt{holdingCount} (int) speichert die Anzahl der im Moment gehaltenen Locks.
   \item \texttt{holdingSet} ([]MutexInt) ist eine Liste, welche die
     momentan von der Routine gehaltenen Locks enthält.
@@ -129,7 +129,8 @@ benötigt werden. Es handelt sich dabei um die folgenden Informationen:
    eingefügte dependency.
   \item \texttt{depCount} (int) gibt die Anzahl der in dem Lock-Baum gespeicherten 
    Dependencies an.
-  \item \texttt{collectSingleLevelLocks} speichert Informationen über single-level Locks, 
+  \item \texttt{collectSingleLevelLocks} (map[string][]int) speichert Informationen
+   über single-level Locks, 
    also Locks, welche von keinem andere Lock abhängen. Auch dies ist wie 
    dependencyMap dazu da, um zu verhindern, dass Informationen, die
    bereits bekannt sind, mehrfach gespeichert werden. 
@@ -147,7 +148,7 @@ welche in \ref{Kap::Implementation:Datastructures} beschrieben wurden, veränder
 oder neu erzeugt.\\
 Diese Vorgänge sollen im Folgenden beschrieben werden.
 \subsection{(R-)Lock}
-(R)-Lock wird verwendet, um die Locks zu beanspruchen.\\
+(R-)Lock wird verwendet, um die Locks zu beanspruchen.\\
 Das Locking von RW-Mutexes unterscheidet sich von dem Locking der Mutexe nur
 dadurch, das isRLock in dem Mutex entsprechend gesetzt wird, und das 
 Locking des eigentlichen sync.(RW)Locks entsprechend angepasst wird. Die 
@@ -170,7 +171,7 @@ die es momentan beansprucht nicht die selben sind oder wenn sie die selben
 sind und beide R-Locks sind. Ist nichts davon der Fall, nimmt das Programm an, 
 es sei ein Deadlock gefunden worden. In diesem Fall wird eine Beschreibung des 
 Deadlocks ausgegeben (vgl. \ref{Kap::Implementation:Report}). Anschließend wird 
-die abschließende Detektion gestartet und das Programm anschließend abgebrochen.\\
+die abschließende Detektion gestartet und das Programm abgebrochen.\\
 Im Anschluss werden nun die entsprechenden Datenstrukturen aktualisiert. Dies geschieht 
 allerdings nur, wenn momentan mindestens eine Routine läuft, da Deadlocks, abgesehen
 von doppeltem Locking, nur bei der nebenläufigen Ausführung mehrerer Routinen 
@@ -188,10 +189,10 @@ Key zugeordnet, die sich durch eine xOr Verknüpfung der Speicheradressen
 des aktuellen und des zuletzt gelockten Locks in der Routine gebildet wird.
 Existiert der Schlüssel nicht, kam die Situation noch nicht vor. Andernfalls 
 wird überprüft, ob die momentane Situation tatsächlich einer bereits vorkommenden 
-Situation entspricht, welche in der dependencyMap als mit dem Key verknüpften Value 
+Situation entspricht, welche in der \texttt{dependencyMap} als mit dem Key verknüpften Value 
 gespeichert werden.
 Existiert die Situation noch nicht, wird sie in den 
-Lock-Baum und in dependencyMap eingefügt. Für diese Dependency entspricht \texttt{mu}
+Lock-Baum und in \texttt{dependencyMap} eingefügt. Für diese Dependency entspricht \texttt{mu}
 gerade dem zu lockenden Mutex und \texttt{holdingSet} dem momentanen \texttt{holdingSet} 
 der Routine, also der Liste aller Mutexe, die von der Routine im Moment gehalten 
 werden.\\
@@ -263,7 +264,7 @@ Die abschließende Detektion wird am Ende des Programs durchgeführt um
 potenzielle Deadlock zu finden, auch wenn diese in dem Durchlauf nicht 
 tatsächlich aufgetreten sind. Sie muss vom Nutzer manuell in seinem Code 
 gestartet werden, nachdem die Ausführung des eigentlichen Programms abgeschlossen 
-wurde.. Sie wird in diesem Fall nur ausgeführt, wenn sie nicht 
+wurde. Sie wird in diesem Fall nur ausgeführt, wenn sie nicht 
 deaktiviert ist und
  die Anzahl der Routinen, die in dem Programm vorkamen,
 sowie die Anzahl der einzigartigen Dependencies mindestens zwei ist.\\
@@ -297,7 +298,7 @@ für solch eine Ausgabe gegeben:
 Bei einem tatsächlichen oder potenziellen Deadlock werden die Locks, welche in 
 dem Zyklus, welcher den Deadlock erzeugt vorkommen, mit den Positionen
 ihrer Initialisierung und ihren (Try-)(R-)Lock-Operationen angegeben. Dazu 
-werden die callerInfo der Mutexe in den 
+werden die \texttt{callerInfo} der Mutexe in den 
 Dependencies betrachtet, die in dem Stack, welcher einen Deadlock beschreibt 
 vorkommen.\\
 Dies führt z.B. zu folgender Ausgabe:

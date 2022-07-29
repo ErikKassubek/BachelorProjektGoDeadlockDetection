@@ -7,9 +7,9 @@ implementierten, sync.Mutex Locks. Diese führen sowohl das eigentliche
 Locking aus und können, beim Durchlaufen des Programms Situationen erkennen, 
 die zu einem Deadlock führen können. Dabei werden sowohl Locks
 als auch RW-Locks implementiert. Dies wirkt sich allerdings nur auf
-die Anwendung des eigentlichen Lockings aus, nicht aber auf die Detection von 
-Deadlocks. Aus diesem Grund wird hierauf im folgenden nicht weiter eingegangen, 
-und die Methoden für die Detection von Deadlocks bezieht sich sowohl auf die
+die Anwendung des eigentlichen Locking aus, nicht aber auf die Erkennung von 
+Deadlocks. Aus diesem Grund wird hierauf im Folgenden nicht weiter eingegangen, 
+und die Methoden für die Erkennung von Deadlocks bezieht sich sowohl auf die
 allgemeinen als auch die RW-Locks.\\
 Für die Erkennung werden drei verschiedene Fälle betrachtet:
 \begin{itemize}
@@ -20,15 +20,15 @@ Für die Erkennung werden drei verschiedene Fälle betrachtet:
 Diese sollen im folgenden genauer betrachtet werden.
 
 \section{Doppeltes Locking}\label{Kap::Rev:Recursive}
-Um doppeltes Locking zu erkennen speichert das Programm ein Dictionary $cur$ mit 
+Um doppeltes Locking zu erkennen speichert das Programm ein Dictionary \texttt{cur} mit 
 allen momentan gehaltenen 
 Locks. Die Werte zu den jeweiligen Keys speichern sowohl, von welcher Go-Routine das 
 Lock momentan gehalten wird, als auch in welcher Datei und Zeile der Befehl,
 der das Locking dieses Locks zu Folge hatte, zu finden ist. Wird ein Lock 
-wieder freigegeben, so wird der entsprechende Eintrag aus $cur$ entfernt. 
+wieder freigegeben, so wird der entsprechende Eintrag aus \texttt{cur} entfernt. 
 Wird nun ein Lock neu beansprucht, überprüft 
 das Programm, ob dieses Lock mit der Routine, die das Lock beanspruchen möchte,
-bereits in $cur$ auftaucht. Ist dies der Fall, dann nimmt das
+bereits in \texttt{cur} auftaucht. Ist dies der Fall, dann nimmt das
 Programm an, dass es sich hierbei um ein mögliches Deadlock durch doppeltes Locking
 handelt und führt 
 entsprechende Schritte aus, um den Nutzer zu warnen. Wird ein Lock wieder freigegeben, wird der entsprechende Eintrag aus $cur$ entfernt.
@@ -38,27 +38,27 @@ Mit dieser Methode werden mögliche Deadlocks gefunden, die dadurch entstehen,
 dass alle Threads zyklisch auf die Freigabe eines Locks warten, welches von 
 einem anderen Thread gehalten wird.\\ 
 Der Detektor arbeitet dabei mit einem Lock-Graphen.\\
-Für die Detektion verwendet das Programm zwei Dictionaries. Das erste ist $cur$, 
+Für die Detektion verwendet das Programm zwei Dictionaries. Das erste ist \texttt{cur}, 
 welches bereits in \ref{Kap::Rev:Recursive} betrachten wurde.\\
-Das andere Dictionary $order$ definiert mit seinen Keys die Kanten des Lock-Graphen.
-Die Keys bestehen dabei aus einer Struktur $beforeAfter$, die Referenzen zu den beiden
+Das andere Dictionary \texttt{order} definiert mit seinen Keys die Kanten des Lock-Graphen.
+Die Keys bestehen dabei aus einer Struktur \texttt{beforeAfter}, die Referenzen zu den beiden
 Locks speicherte, welche von der Kante im Graphen verbunden werden.
-Wird ein neues Lock $p$ beanspruchen, so wird für 
-jedes Lock $b$, welches sich momentan in $cur$ befindet ein  
-neuer Eintrag $beforeAfter\{b, p\}$ in $order$ hinzugefügt. 
+Wird ein neues Lock $p$ von Routine $R$ beanspruchen, so wird für 
+jedes Lock $b$, welches sich momentan in \texttt{cur} befindet und von $R$ gehalten wird ein  
+neuer Eintrag $beforeAfter\{b, p\}$ in \texttt{order} hinzugefügt. 
 Die Werte, die für jeden Key in $order$ gespeichert werden, entsprechen 
-den Informationen, die auch in $cur$ für die beiden Locks gespeichert wird. Allerdings 
+den Informationen, die auch in \texttt{cur} für die beiden Locks gespeichert wird. Allerdings 
 wird auf die Speicherung der ID der erzeugenden Go-Routine verzichtet, da sie 
 nicht benötigt wird.
 Information aus $order$ werden nur entfernt, wenn $order$ eine festgelegte 
 maximale Größe überschreitet.\\ 
 Die Überprüfung, ob ein Lock $p$ zu einem Deadlock führen kann, finden bereits statt,
-bevor das Lock in $cur$ und $order$ eingetragen wird. Dazu wird für jedes Lock
-$b$ in $cur$ überprüft,
-ob $order$ einen Key $beforeAfter\{p, b\}$ besitzt, der Graph also die beiden 
+bevor das Lock in \texttt{cur} und $order$ eingetragen wird. Dazu wird für jedes Lock
+$b$ in \texttt{cur} überprüft,
+ob \texttt{order} einen Key $beforeAfter\{p, b\}$ besitzt, der Graph also die beiden 
 Locks in 
 umgekehrter Reihenfolge enthält. Existiert solch ein Key, und wurde $b$ 
-von einer anderen Routine als $p$ in $cur$ eingefügt, bedeutet dies einen 
+von einer anderen Routine als $p$ in \texttt{cur} eingefügt, bedeutet dies einen 
 Loop aus zwei Kanten im Lockgraphen und somit einen möglichen Deadlock.\\
 Dies bedeutet aber auch, dass das Programm nicht in der Lage ist, ein Kreis 
 in einem Lock-Graphen zu finden, wenn dieser aus drei oder mehr Kanten besteht.
@@ -79,7 +79,7 @@ sich das Programm bereits in einem Deadlock befindet. Möchte eine Routine ein
 Lock beanspruchen wird vorher eine go routine mit einem Counter gestartet.
 Sollte die Inanspruchnahme des Locks innerhalb der vorgegebenen Zeit 
 (default: 30s) gelingen, wird die go routine beendet. Sollte es nicht gelingen,
-nimmt das Programm nach der festgelegten Zeit an, dass es zu einem Deadlock 
+nimmt das Programm an, dass es zu einem Deadlock 
 gekommen ist und gibt eine entsprechende Nachricht aus.\\
 Diese Methode kann
 durchaus nützlich sein, um über Deadlocks informiert zu werden. Allerdings führt
@@ -121,5 +121,5 @@ Programm aufgrund der Verschachtelten go-Routine nicht möglich, den möglichen
 Deadlock zu erkennen. \\
 Ein Fall, bei dem es zu False Positives kommen kann, wird durch Gate-Locks
 ausgelöst. Wie bereits beschrieben ist ein auf Lock-Graphen basierender Detektor,
-und damit solch ein Detektor nicht in der Lage zu erkennen, wenn ein 
+und damit dieser Detektor nicht in der Lage zu erkennen, wenn ein 
 potenzielles Deadlock durch Gate-Locks unmöglich gemacht wird.

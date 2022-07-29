@@ -1,6 +1,6 @@
 \chapter{Analyse von Deadlock-Go und Vergleich mit 
     go-deadlock (sasha-s)}
-Im Folgenden soll der in \ref{Kap::Implementaion} beschriebene und in 
+Im Folgenden soll der in Kap. \ref{Kap::Implementaion} beschriebene und in 
 \cite{implementation} implementierte Detektor \glqq Deadlock-Go\grqq\ analysiert 
 und mit dem in 
 \ref{Chap::Review:go-deadlock} betrachteten Detektor \glqq go-deadlock\grqq\ verglichen
@@ -13,7 +13,7 @@ Standartsituationen, zum anderen auf Programmen, die aus tatsächlichen
 Programmen übernommen wurden. Diese werden aus Gobench \cite{gobench}, einer 
 Benchmark Suite für Parallelitätsfehler in Go ausgewählt.
 \section{Funktionale Analyse}
-Man betrachte die Programme zuerst funktional, d.h. man überprüft, ob sie zu den 
+Man analysiere die Programme zuerst funktional, d.h. man überprüfe, ob sie zu den 
 gewünschten Ergebnissen führen.\\
 Man betrachte zuerst die Standardsituationen. In der folgenden Tabelle 
 \ref{Tab::Analyse:Functional.Standart} sind die 
@@ -28,7 +28,7 @@ erkannt werden (1.1). Ebenso erkenne beide, dass kein Deadlock vorliegt, wenn da
 Locking von mehreren Locks nicht zyklisch verläuft (1.2).
 Sobald diese Zyklen allerdings eine Länge von 3 oder mehr 
 erreichen, werden diese durch sasha-s nicht mehr erkannt, da dieser 
-Detektor nur nach Loops der Länge zwei sucht (2). Deadlock-Go 
+Detektor nur nach Zyklen der Länge zwei sucht (2). Deadlock-Go 
 hingegen ist in der Lage auch diese potenziellen Deadlocks zu erkennen.\\
 Auch bei Deadlocks, in denen zwar zyklisches Locking auftritt, welche aber 
 auf Grund von Gate-Locks nicht zu einem tatsächlich Deadlock führen können,
@@ -41,7 +41,7 @@ sasha-s ist standardmäßig dazu in  der Lage doppeltes Locking zu erkennen.
 Bei Deadlock-Go hängt die Erkennung solcher Deadlocks von den Optionen ab.
 Ist die Erkennung von doppeltem Locking nicht deaktiviert, ist Deadlock-Go also auch in 
 der Lage solche Deadlocks durch doppeltes Locking zu erkennen (5). \\ 
-Bei verschachtelten Routinen wie in \ref{Kap::Rev:Cyclic} beschrieben ist 
+Bei verschachtelten Routinen ist 
 keines der Tools in der Lage das potenzielle Deadlock zu erkennen (4).\\
 Für tatsächlich auftretende Deadlocks, welche durch zyklisches Locking auftreten 
 sind beide Detektoren in der Lage, solche Situationen zu erkennen (6).\\\\
@@ -91,13 +91,14 @@ Deadlock führen kann oder nicht (8).
 Für RW-Locks gibt es in beiden Detektoren ein Implementierung. Allerdings unterscheidet
 sich die Detektion von Deadlocks in sasha-s für RW-Locks nicht von der für 
 normale Locks. Aus diesem Grund kommt es bei diesem Detektor zu false-positives,
-wenn ein Zyklus in den Lock-Operationen auf Grund von RLock-Operationen nicht 
+wenn ein Zyklus in den Lock-Operationen auf Grund von R-Lock-Operationen nicht 
 zu einem Deadlock führen kann. Deadlock-Go kann in vielen dieser Situationen 
 eine false-positive Meldung verhindern (9.1-9.5), allerdings gibt es auch hier 
 Situationen, in denen eine false-positive Meldung nicht verhindert werden kann (9.6).\\
 Wie schon bei normalen Locks ist sasha-s auch bei RW-Locks nicht in der Lage 
 zu erkennen, wenn zyklisches Locking, durch Gate-Locks nicht zu einem Deadlock 
-führen kann, während dies für Deadlock-Go möglich ist (10.1). Es ist auch in der Lage 
+führen kann, während dies für Deadlock-Go möglich ist (10.1). Deadlock-Go
+ist auch in der Lage 
 zu erkennen, dass R-Locks nicht als Gat-Locks funktionieren. Da sasha-s allgemein 
 nicht in der Lage ist Gate-Locks zu erkennen, wird dies automatische erkannt. (10.2).\\
 Ähnliches gilt auch für doppeltes Locking. Sasha-s ist 
@@ -108,30 +109,29 @@ korrekt erkennen.
 \\\\
 Im Folgenden sollen nun Beispielprogramme aus GoBench \cite{gobench}
 betrachtet werden. Dabei handelt es sich um Programme mit etwa 100 Zeilen und 
-1 bis 3 Routinen. Für Deadlock-Go wurden dabei alle Optionen aktiviert, um ein 
-optimales Detektionsergebnis zu erhalten.
+1 bis 3 Routinen.
 Die folgende Tabele \ref{Tab::Analyse:Functional.Example} gibt für jedes Programm an,
  ob es von den Detektoren erkannt wurde.
 \begin{table}[H]
 \centering
-\begin{tabular}{|l|l|l|}
+\begin{tabular}{|l|l|l|l|}
 \hline
-\textbf{ID} & \textbf{Deadlock-Go} & \textbf{sasha-s} \\ \hline
-Cockroach584 & Ja & Ja \\ \hline
-Cockroach9935 & Ja & Ja \\ \hline
-Cockroach6181 & Ja & Ja \\ \hline
-Cockroach7504 & Ja & Ja \\ \hline
-Cockroach10214 & Ja & Ja \\ \hline
-Etcd5509 & Nein & Nein \\ \hline
-Etcd6708 & Ja & Ja \\ \hline
-Etcd10492 & Ja & Ja \\ \hline
-Kubernetes13135 & Ja & Ja \\ \hline
-Kubernetes30872 & Ja & Ja \\ \hline
-Moby4951 & Ja & Ja \\ \hline
-Moby7559 & Ja & Ja \\ \hline
-Moby17176 & Nein & Nein \\ \hline
-Moby36114 & Ja & Ja \\ \hline
-Syncthing4829 & Ja & Ja \\ \hline
+\textbf{ID} & \textbf{Typ} &\textbf{Deadlock-Go} & \textbf{sasha-s} \\ \hline
+Cockroach584 & Doppeltes Locking & Ja & Ja \\ \hline
+Cockroach9935 & Doppeltes Locking & Ja & Ja \\ \hline
+Cockroach6181 & Zyklische Locking mit RW-Locks& Ja & Ja \\ \hline
+Cockroach7504 & Zyklische Locking & Ja & Ja \\ \hline
+Cockroach10214 & Zyklische Locking & Ja & Ja \\ \hline
+Etcd5509 & Doppeltes Locking & Nein & Nein \\ \hline
+Etcd6708 & Doppeltes Locking & Ja & Ja \\ \hline
+Etcd10492 & Doppeltes Locking & Ja & Ja \\ \hline
+Kubernetes13135 & Zyklisches Locking & Ja & Ja \\ \hline
+Kubernetes30872 & Zyklisches Locking & Ja & Ja \\ \hline
+Moby4951 & Zyklisches Locking & Ja & Ja \\ \hline
+Moby7559 & Doppeltes Locking & Ja & Ja \\ \hline
+Moby17176 & Doppeltes Locking & Nein & Nein \\ \hline
+Moby36114 & Doppeltes Locking & Ja & Ja \\ \hline
+Syncthing4829 & Doppeltes Locking & Ja & Ja \\ \hline
 \end{tabular}
 \caption{Funktionale Analyse der Beispielprogramme}
 \label{Tab::Analyse:Functional.Example}
@@ -150,7 +150,7 @@ bessere Ergebnisse gezeigt hat. Dies lässt darauf schließen, dass solche
 Situationen, in denen Deadlock-Go besser abschneidet nicht sehr häufig 
 in tatsächlichen Situationen auftreten. Es muss allerdings auch beachtet werden, 
 dass es sich bei den betrachteten Beispielen um Situationen handelt, in denen
-Deadlocks tatsächlich auftreten, wären Deadlock-Go vor allem bei der 
+Deadlocks tatsächlich auftreten, während Deadlock-Go vor allem bei der 
 Verhinderung von false-positives besser abschneidet als sasha-s. Diese 
 Situation kommen in dem Beispielen allerdings nicht vor.
 
@@ -242,7 +242,7 @@ in diesem Fall alle sehr klein sind, verliest sasha-s seine Vorteil, dass
 es nur Pfade der Länge 2 betrachtet. Allerdings überwiegt dieser wieder 
 deutlich, wenn sowohl die Anzahl der Routinen als auch die Anzahl der Lock groß
 ist.\\ \\
-Beide Detektoren sind in der Lage, die Detektion zu deaktivieren, so dass die dann nur noch einen
+Beide Detektoren sind in der Lage, die Detektion zu deaktivieren, so dass sie dann nur noch einen
 sehr geringe Verlängerung der Laufzeiten haben. Nachdem ein Programm zu Ende entwickelt
 wurde, und alle potenziellen Deadlock beseitigt wurden, kann die Detektion somit deaktiviert
 werden, um die schnelleren Laufzeiten zu erreichen, ohne dass der Detector aus dem Code entfernt
