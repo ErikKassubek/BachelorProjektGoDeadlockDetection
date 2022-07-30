@@ -155,10 +155,10 @@ in dem Bereich mit den Locks $x$ und $y$ aufhalten kann.
 
 \subsection{Lock-Bäume} \label{Kap::Theo:LockTree}
 Anders als bei Lock-Graphen, speichert bei Lock-Bäumen jede Routine  
-seine eigenen Abhängigkeiten. Dies bedeutet, dass der Lock-Baum $B_i$ der 
-Routine $R_i$ genau dann die Kante $x\to y$ besitzt, wenn in Routine $R_i$ das 
-Lock $y$ beansprucht wird und $x$ das letzte Lock ist, welches von $R_i$ beansprucht 
-worde ist, ohne das $x$ wider freigegeben wurde. 
+seine eigenen Abhängigkeiten. Die Knoten des Baums stellen dabei die 
+Locks $l_i$ in der Routine da. Es gibt eine Kante von $l_1$ nach $l_2$ wenn 
+$l_1$ das Lock repräsentiert, welches zuletzt von der Routine beansprucht worden ist,
+währen das Lock $l_2$ beansprucht wird\cite{agarwal}. 
 Mathematisch ausgedrückt ist ein Lock-Baum $B_i = (L_i, E_i)$ für Routine $i$ also ein 
 Baum, wobei $L_i$ eine Teilmenge der in der Routine vorkommenden Locks is, und 
 die Menge der Kanten $E_i$ über
@@ -234,17 +234,15 @@ Man betrachte das folgende Beispiel:
         4. & $rel_{1}(mu_1)$ & $rel_{2}(mu_2)$ & $rel_{3}(mu_3)$\\
         5. & $acq_{1}(mu_4)$ &                 & \\
         6. & $acq_{1}(mu_5)$ &                 & \\
-        7. & $acq_{1}(mu_6)$ &                 & \\
-        8. & $rel_{1}(mu_6)$ &                 & \\
-        9. & $rel_{1}(mu_5)$ &                 & \\
-        10. & $rel_{1}(mu_4)$ &                 & \\
+        7. & $rel_{1}(mu_5)$ &                 & \\
+        8. & $rel_{1}(mu_4)$ &                 & \\
    \end{tabular}
 \end{table}
 Hierbei wird nur die Programme der einzelnen Routinen dargestellt, 
 nicht aber der Ablauf zwischen den Routinen.\\
 Dabei gibt sich die Menge der Dependencies für $R1$ zu 
 \begin{align*}
-    B_1 = \{(mu_2, \{mu_1\}), (mu_5, \{m_4\})(mu_6, \{mu_5, mu_4\})\}
+    B_1 = \{(mu_2, \{mu_1\}), (mu_5, \{m_4\})\}
 \end{align*}
 für $R_2$ zu 
 \begin{align*}
