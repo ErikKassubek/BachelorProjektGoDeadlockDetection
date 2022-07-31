@@ -198,7 +198,7 @@ Detektion in Deadlock-Go ergibt sich damit folgendes Bild:
         \includegraphics[width=.47\textwidth]{img/2x2_runtime.eps} & \includegraphics[width=.47\textwidth]{img/2x100_runtime.eps}\\
         \includegraphics[width=.47\textwidth]{img/100x2_runtime.eps} & \includegraphics[width=.47\textwidth]{img/100x100_runtime.eps}\\
     \end{tabular}
-    \caption{Laufzeiten der eigentlichen Programme (ohne abschließende Detektion 
+    \caption{Laufzeiten dew eigentlichen Programms (ohne abschließende Detektion 
     in Deadlock-Go) der betrachteten Situationen ohne Detektor, mit Deadlock-Go und sasha-s. ``ohne'' und ``mit''
     für Deadlock-Go bedeutet dabei, dass der Detektor ohne bzw. mit periodischer 
     Detektion abgelaufen ist.}
@@ -233,7 +233,7 @@ zwischen den beiden Detektoren relativ gering. Sasha-S hat einen klaren
 Vorteil, wenn es sich um ein Programm mit vielen Locks und damit vielen 
 Dependencies handelt. Da sasha-s immer nur Pfade der Länge zwei in seinem 
 Lock-Graphen betrachtet, 
-währen Deadlock-Go alle möglichen Pfade in seinen Lock-Bäumen analysiert, 
+währen Deadlock-Go alle möglichen Pfade in allen Kombinationen von Lock-Bäumen betrachtet, 
 muss Deadlock-Go deutlich mehr Pfade analysieren, und hat daher eine signifikant
 längere Laufzeit.
 Deadlock-Go hat dafür einen Vorteil, wenn die Anzahl der 

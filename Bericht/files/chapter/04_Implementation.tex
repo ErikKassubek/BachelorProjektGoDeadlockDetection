@@ -145,7 +145,8 @@ Ist der Detektor nicht vollständig deaktiviert, werden bei den verschiedenen
 Operationen Daten gesammelt, um die Detektion von Deadlocks zu ermöglichen.  
 Bei dieser Sammlung werden die Datenstrukturen,
 welche in \ref{Kap::Implementation:Datastructures} beschrieben wurden, verändert
-oder neu erzeugt.\\
+oder neu erzeugt um Lock-Bäume wie in \ref{Kap::Theo:LockTree} beschrieben zu 
+erzeugen.\\
 Diese Vorgänge sollen im Folgenden beschrieben werden.
 \subsection{(R-)Lock}
 (R-)Lock wird verwendet, um die Locks zu beanspruchen.\\
@@ -221,13 +222,16 @@ wird die Anzahl der Lockungen des Locks angepasst, dass Mutex aus dem
 \section{Periodische Detektion} \label{Kap::Implementation:Periodical}
 Ist sie nicht deaktiviert, so wird die periodische Detektion in regelmäßigen 
 Abständen (default: 2s) gestartet
-um nach lokalen, tatsächlich auftretenden Deadlocks zu suchen. Lokal bedeutet 
+um nach lokalen, tatsächlich auftretenden Deadlocks zu suchen.
+Lokal bedeutet 
 dabei, dass sich nur ein Teil der Routinen in einem Deadlock befindet. Sollte 
 es zu einem totalen Deadlock kommen, bei dem alle Routinen blockiert werden, 
 wird das Programm automatisch von der Go Runtime Deadlock Detection
 beendet. In 
 diesem Fall ist keine weitere abschließende Detektion von Deadlocks möglich.\\\\
-Für die periodische Detektion wird von jeder Routine nur \texttt{curDep} betrachtet,
+Die Detektion ist, bis auf die Betrachtung von RW-Locks identisch mit der periodischen
+Detektion in UNDEAD (Kap. \ref{Kap::Theo:UNDEAD}).
+Für die Detektion wird von jeder Routine nur \texttt{curDep} betrachtet,
 also diejenige Dependency, welche als letztes in den Lock-Baum eingefügt wurde. 
 Die Detektion wird nur ausgeführt, wenn sich diese Menge seit der letzten 
 periodischen Detektion verändert hat und momentan mindestens zwei Routinen im 
@@ -268,8 +272,8 @@ wurde. Sie wird in diesem Fall nur ausgeführt, wenn sie nicht
 deaktiviert ist und
  die Anzahl der Routinen, die in dem Programm vorkamen,
 sowie die Anzahl der einzigartigen Dependencies mindestens zwei ist.\\
-Im Großen und Ganzen verläuft die Detektion 
-identisch zu der periodischen Detektion (vgl. \ref{Kap::Implementation:Periodical}).
+Wie bereits in Kap. \ref{Kap::Theo:UNDEAD} beschrieben, verläuft die Detektion 
+ähnlich wie die periodischen Detektion ab.
 Allerdings werden nun nicht nur die zuletzt in die Lock-Bäume aufgenommenen 
 Dependencies, sondern alle in den Bäumen vorkommenden Dependencies betrachtet. 
 Dabei wird darauf geachtet, dass von jeder Routine maximal eine 
