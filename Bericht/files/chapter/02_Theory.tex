@@ -164,8 +164,8 @@ Baum, wobei $L_i$ eine Teilmenge der in der Routine vorkommenden Locks is, und
 die Menge der Kanten $E_i$ über
 \begin{align*}
     (l_1, l_2) \in E_i \Leftrightarrow &\exists t_1, t_4\ \nexists t_2, t_3, l_3\\
-    &((t_1 < t_2 < t_3 \lor t_1 < t_3 < t_2 < t_4) \land (\lnot l_1 = l_3 \land \lnot l_2 = l_3)\\
-    & \land acq_i(l_1)[t_1] \land rel_i(l_1)[t_2] \land acq_i(l_3)[t_3] acq_i(l_2)[t_4])
+    &((t_1 < t_2 < t_3 < t_4 \lor t_1 < t_3 < t_2 < t_4) \land (\lnot l_1 = l_3 \land \lnot l_2 = l_3)\\
+    & \land acq_i(l_1)[t_1] \land (rel_i(l_1)[t_2] \lor acq_i(l_3)[t_3]) \land acq_i(l_2)[t_4])
 \end{align*}
 gegeben ist.\\
 Im folgenden, wird ein Lock-Baum als eine Menge von Dependencies betrachtet. 
