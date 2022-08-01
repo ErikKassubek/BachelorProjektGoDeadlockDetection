@@ -204,7 +204,8 @@ Detektion in Deadlock-Go ergibt sich damit folgendes Bild:
     Detektion abgelaufen ist.}
 \end{figure}
 Es ist klar zu sehen, dass beide Detektoren die Laufzeit des eigentlichen 
-Programms verlängern. Allerdings hat sasha-s dabei einen deutlich größeren 
+Programms verlängern. Allerdings hat sasha-s dabei, sobald entweder die Anzahl der 
+Locks oder Routinen größer wird, einen deutlich größeren 
 Einfluss auf die Laufzeit. Dies liegt daran, dass Deadlock-Go während der 
 Laufzeit des eigentlichen Programms nur Daten sammelt. Die 
 periodische Detektion läuft dabei in einer eigenen Routine und hat daher 
