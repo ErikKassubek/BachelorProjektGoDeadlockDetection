@@ -9,14 +9,15 @@ besteht, dass eines der Locks freigegeben wird. Eine weiter Situation,
 bei denen es zu Deadlocks kommen kann besteht darin, dass eine Routine 
 ein Lock beansprucht, während es dasselbe Lock bereits hält.\\ 
 Neben solchen Ressourcen-Deadlock gibt es noch weitere Möglichkeiten Deadlocks 
-zu erzeugen, z.B. Kommunikations-Deadlocks, die im folgenden aber nicht betrachtet 
+zu erzeugen, z.B. Kommunikations-Deadlocks, die im Folgenden aber nicht betrachtet 
 werden sollen. \\
 Da Deadlocks häufig nur in sehr bestimmten Fällen auftreten, kann es passieren,
 dass solche Situationen während der Entwicklung eines Programms nicht bemerkt
-werden. Dies führt dazu, dass in einer Stichprobe in vier open-source Anwendungen 
+werden. Dies führt z.B. dazu, dass in einer 2008 durchgeführten Stichprobe in 
+vier open-source Anwendungen 
 (MySql, Apache, Mozilla und OpenOffice) etwa $30 \%$ aller Concurrency-Probleme 
 auf Deadlocks zurückzuführen waren \cite{Lu}.\\\\
-Go besitzt die s.g. Go Runtime Deadlock Detection um Deadlocks zu erkennen. 
+Go besitzt eine sogenannte Go Runtime Deadlock Detection um Deadlocks zu erkennen. 
 Dazu zählt Go die nicht blockierten Go-Routinen.
 Fällt dieser Wert auf $0$, nimmt Go an, dass es zu einem Deadlock gekommen 
 ist und bricht das Programm mit einer Fehlermeldung ab~\cite{grdd_code}.
