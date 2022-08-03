@@ -382,11 +382,11 @@ durch Betrachtung aller möglichen Permutationen von Dependencies in zwei Routin
 in drei, usw. Es nutzt dabei 
 eine Tiefensuche, um diese Ketten iterativ zu durchsuchen. Wenn eine solche Kette 
 gefunden wurde, wird überprüft, ob sie einen Zyklus bildet 
-(\eqref{For::Implementation:Periodical.c}).
+(\eqref{For::Theo:LockTree.c}).
 Ein solcher Zyklus deutet auf einen potenziellen Deadlock hin, was dazu 
 führt, dass UNDEAD eine Information über den gefundenen potenziellen Deadlock ausgibt.
-Da UNDEAD keine RWLocks implementiert, müssen \eqref{For::Implementation:Periodical.d}
-und \eqref{For::Implementation:Periodical.f} nicht erfüllt werden um eine Deadlock-Meldung
+Da UNDEAD keine RWLocks implementiert, müssen \eqref{For::Theo:LockTree.d}
+- \eqref{For::Theo:LockTree.f} nicht erfüllt werden um eine Deadlock-Meldung
 auszulösen.
 
 
