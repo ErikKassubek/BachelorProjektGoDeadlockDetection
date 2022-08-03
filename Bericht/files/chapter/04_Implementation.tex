@@ -179,10 +179,7 @@ von doppeltem Locking, nur bei der nebenläufigen Ausführung mehrerer Routinen
 auftreten. Man betrachte zu erst den Fall des Single-Level-Locks. Dabei handelt es 
 sich um einen Mutex, der zu einem Zeitpunkt beansprucht wird an dem die 
 selbe Routine keine anderen Locks hält. Da sich somit keine Dependencies bilden,
-muss der Lock-Baum der Routine nicht verändert werden. In diesem Fall wird 
-lediglich die Information über den Aufruf des Lockings in \texttt{context} gespeichert,
-solange der Aufruf der exakt selben Beanspruchung (selbe Datei und selbe Zeilennummer)
-noch nicht gespeichert wurde. Hält die Routine allerdings bereits ein oder 
+muss der Lock-Baum der Routine nicht verändert werden. Hält die Routine allerdings bereits ein oder 
 mehrere Lock, wird die entsprechende Dependency in den Lock-Baum eingefügt,
 solange sie in dieser noch nicht existiert. Diese Überprüfung wird mit Hilfe 
 von \texttt{dependencyMap} ausgeführt. Dazu wird jeder Situation ein 
@@ -198,9 +195,13 @@ gerade dem zu lockenden Mutex und \texttt{holdingSet} dem momentanen \texttt{hol
 der Routine, also der Liste aller Mutexe, die von der Routine im Moment gehalten 
 werden.\\
 Sowohl bei Single-Level-Locks als auch bei Locks, welche zu Dependencies führen
-wird das Lock im Anschluss in das \texttt{holdingSet} der Routine eingefügt.\\\\
+wird das Lock im Anschluss in das \texttt{holdingSet} der Routine eingefügt.
+Außerdem werden in \texttt{context} die Informationen darüber gespeichert, in 
+welcher Datei und Zeile die Lock-Operation ausgeführt worden ist. Ist es nicht 
+deaktiviert, wird außerdem der Call-Stack der Routine zur Zeit der Operation 
+gespeichert.\\\\
 Sobald die Aktualisierung der Datenstrukturen abgeschlossen wurde wird die 
-eigentliche Beanspruchung des Locks ausgeführt.
+eigentliche Beanspruchung des Locks ausgeführt und in.
 
 \subsection{(R)-TryLock}
 Bei einer Try-Lock Operation wird ein Lock nur beansprucht, wenn es im Moment 
@@ -243,10 +244,11 @@ entspricht immer dem momentan betrachteten Pfad. Anschließend wird für
 die \texttt{curDep} jeder Routine, die noch nicht auf dem Stack liegt und noch 
 nicht zuvor bereits betrachtet wurde überprüft,
 ob das Hinzufügen der Dependency zu einer gültigen Kette führt, ob also 
-die Formeln \eqref{For::Theo:LockTree.a} - \eqref{For::Theo:LockTree.d} immer noch 
+die Formeln \eqref{For::Theo:LockTree.a}, \eqref{For::Theo:LockTree.b},
+\eqref{For::Theo:LockTree.d} und \eqref{For::Theo:LockTree.f} immer noch 
 gelten. Ist dies der Fall, so wird überprüft, ob die Kette einen Kreis 
-bildet, also ob die Formeln \eqref{For::Implementation:Periodical.e} und 
-\eqref{For::Implementation:Periodical.f} ebenfalls gelten. Ist der Pfad mit der 
+bildet, also ob die Formeln \eqref{For::Theo:LockTree.c} und 
+\eqref{For::Theo:LockTree.e} ebenfalls gelten. Ist der Pfad mit der 
 neuen Dependency eine gültige Kette aber kein Kreis, so wird die Dependency
 auf den Stack gelegt und das ganze rekursiv wiederholt. Ist die Kette ein Kreis,
 so nimmt dass Programm vorerst an, es sei ein lokaler Deadlock erkannt worden.
