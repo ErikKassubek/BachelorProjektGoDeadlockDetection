@@ -282,10 +282,10 @@ zusätzliche Tests zu falschen Meldungen kommt. Man betrachte dazu erneut das
 Beispielprogramm zu Gate-Locks aus \ref{Kap::Theo:Lockgraph}.
 In diesem Fall erhält man die folgenden Lock-Bäume, repräsentiert durch die Menge
 ihrer Dependencies:
-\begin{align}
+\begin{align*}
     B_1 = \{(y, \{z\}), (x, \{z, y\})\}\\
     B_2 = \{(x, \{z\}), (y, \{z, x\})\}
-\end{align}
+\end{align*}
 Es ist nun leicht sich zu überzeugen, dass es mit den oben genannten Formeln nicht 
 zu einer Deadlock-Meldung kommt.
 
@@ -351,6 +351,25 @@ Andernfalls geht UNDEAD davon aus, das ein tatsächliches Deadlock aufgetreten
 ist. Tritt dieser Fall auf, wird die 
 abschließende Detektion (Kap. \ref{Kap::UNDEAD:Abschließende}) gestartet 
 und das Programm im Anschluss abgebrochen. 
+Man betrachte dabei das folgende Beispiel:
+\begin{figure}[H]
+    \lstinputlisting{code/theo_undead_peri.go}
+\end{figure}
+Zum Zeitpunkt, an dem die periodische Detektion gestartet wird, wurden folgende
+Dependencies aufgezeichnet, wobei der Stern symbolisiert, dass die entsprechende 
+Dependency als letztes in die Liste eingefügt worden ist.
+\begin{align*}
+    B_1 &= \{(x, \{w\}), (z, \{y\})^*\}\\
+    B_2 &= \{(w, \{x\})^*\}
+\end{align*}
+Für die periodische Detektion werden nun nur die mit dem Stern gekennzeichneten 
+Dependencies betrachtet. Dies bedeutet, dass das potentielle Deadlock zwischen 
+x und w nicht erkannt wird. Dies ist aber auch nicht notwendig, da es in diesem 
+Durchlauf nicht aufgetreten ist und das Programm somit nicht abgebrochen 
+werden muss. Das potentielle Deadlock zwischen y und z wird in diesem Fall auch 
+nicht erkannt, da $R_2$ den entsprechenden Teil noch nicht durchgeführt hat.\\
+Auch wenn diese potentiellen Deadlocks hier nicht erkannt wurden, werden sie in der 
+abschließenden Detektion erkannt.
 \subsection{Abschließende Detektion} \label{Kap::UNDEAD:Abschließende}
 Die abschließende Detektion wird ausgeführt, nachdem das eigentliche Programm
 abgeschlossen wurde, oder wenn sie durch die periodische Detektion gestartet wurde.
